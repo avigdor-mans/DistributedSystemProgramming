@@ -9,9 +9,9 @@
 bin/
 
 #Credentials
-*.properties
+AwsCredentials.properties
 
 #Configurations
-.settings/
+settings/
 .classpath
 .project
