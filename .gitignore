@@ -12,6 +12,6 @@ bin/
 *.properties
 
 # Configurations #
-settings/
+.settings/
 .classpath
 .project
