@@ -6,10 +6,14 @@
 *.ear
 
 #Binary files
-bin/
+LocalApplication/bin/
+Manager/bin/
+Worker/bin/
 
 #Credentials
-AwsCredentials.properties
+LocalApplication/src/AwsCredentials.properties
+Manager/src/AwsCredentials.properties
+Worker/src/AwsCredentials.properties
 
 #Configurations
 settings/
