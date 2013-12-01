@@ -47,7 +47,7 @@ public class LocalApplication
 			
 			
 			//wait to user authorization
-			System.out.println("When uploading files to s3 is complete press enter to continue");
+			System.out.println("When uploading files to s3 is complete press enter to continue \n");
 			System.in.read();
 			
 			
