@@ -5,17 +5,13 @@
 *.war
 *.ear
 
-#Binary files
-LocalApplication/bin/
-Manager/bin/
-Worker/bin/
+# Binary files #
+bin/
 
-#Credentials
-LocalApplication/src/AwsCredentials.properties
-Manager/src/AwsCredentials.properties
-Worker/src/AwsCredentials.properties
+# Credentials #
+*.properties
 
-#Configurations
+# Configurations #
 settings/
 .classpath
 .project
