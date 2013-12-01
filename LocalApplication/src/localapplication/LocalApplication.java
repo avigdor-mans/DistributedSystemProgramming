@@ -19,6 +19,7 @@ import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 
 public class LocalApplication
 {
@@ -27,13 +28,22 @@ public class LocalApplication
 		
 		try
 		{
+			// load credentials
 			AWSCredentials credentials = new PropertiesCredentials(LocalApplication.class.getResourceAsStream("../AwsCredentials.properties"));
 			AmazonS3 s3 = new AmazonS3Client(credentials);
 			
-			String bucketName =  credentials.getAWSAccessKeyId();
+			String bucketName =  credentials.getAWSAccessKeyId().toLowerCase();
 			String imageUrlKey = "imageUrlTxt";
 			
-			s3.putObject(bucketName, imageUrlKey, new File("../image-urls.txt"));
+			// creating the s3 bucket
+			System.out.println("Creating bucket " + bucketName + "\n");
+            s3.createBucket(bucketName);
+            
+            // upload file image-urls.txt to S3
+            File imageUrl = new File("../image-urls.txt");
+			PutObjectRequest s3Request = new PutObjectRequest(bucketName, imageUrlKey, imageUrl);
+			s3.putObject(s3Request);
+			System.out.println("file " + imageUrl.getName() + " was uploaded successfually \n");
 			
 			
 			//wait to user authorization
@@ -44,13 +54,15 @@ public class LocalApplication
 			// creating the ec2 manager
 			AmazonEC2 manager = new AmazonEC2Client(credentials);
 			
+			// create a request for a computer
 			RunInstancesRequest request = new RunInstancesRequest();
 			request.setInstanceType(InstanceType.T1Micro.toString());
 			request.setMinCount(1);
 			request.setMaxCount(1);
-			request.setImageId("ami-51792c38");
+			request.setImageId("ami-51792c38"); // supports java
 			request.withUserData(getScript());
 			
+			// start instance
 			manager.runInstances(request);
 			
 		}
