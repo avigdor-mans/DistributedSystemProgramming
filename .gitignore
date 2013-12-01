@@ -4,3 +4,14 @@
 *.jar
 *.war
 *.ear
+
+#Binary files
+bin\
+
+#Credentials
+*.properties
+
+#Configurations
+.settings\
+.classpath
+.project
