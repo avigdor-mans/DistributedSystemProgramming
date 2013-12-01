@@ -6,12 +6,12 @@
 *.ear
 
 #Binary files
-bin\
+bin/
 
 #Credentials
 *.properties
 
 #Configurations
-.settings\
+.settings/
 .classpath
 .project
