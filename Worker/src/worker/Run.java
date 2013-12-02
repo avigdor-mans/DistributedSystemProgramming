@@ -7,6 +7,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -21,15 +22,17 @@ public class Run
 		
 		try
 		{
-			AWSCredentials credentials = new PropertiesCredentials(Run.class.getResourceAsStream("../AwsCredentials.properties"));
+			AWSCredentials credentials = new BasicAWSCredentials("AKIAJZFCY5FIFMSAAGRQ","JHAB/lX5xrjOu+Vj6b294f0hpxF7oqJt8UGAItbo");
 
 			AmazonS3 s3 = new AmazonS3Client(credentials);
-			
-			File file = File.createTempFile("aws-java-sdk-", ".txt");
+
+			// create temporary file
+			File file = File.createTempFile("test", ".txt");
 			Writer writer = new OutputStreamWriter(new FileOutputStream(file));
 			writer.write("The quick brown fox jumps over lazy dog");
 			writer.close();
 			
+			// bucket name, file's Key , file 
 			PutObjectRequest request = new PutObjectRequest("akiajzfcy5fifmsaagrq", "testFileTxt", file);
 			
 			s3.putObject(request);
