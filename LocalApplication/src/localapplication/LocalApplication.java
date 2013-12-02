@@ -3,7 +3,6 @@ package localapplication;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -39,6 +38,16 @@ public class LocalApplication
 		{
 			// load credentials
 			AWSCredentials credentials = new PropertiesCredentials(LocalApplication.class.getResourceAsStream("../AwsCredentials.properties"));
+			
+			// create SQS Service
+			AmazonSQS sqs = new AmazonSQSClient(credentials);
+			
+			// Add a queue
+	        System.out.println("Creating a new SQS queue called LMQueue.\n");
+	        CreateQueueRequest createQueueRequest = new CreateQueueRequest("LMQueue"+ UUID.randomUUID());
+	        String LMQueueUrl = sqs.createQueue(createQueueRequest).getQueueUrl();
+			
+			// create a S3 Service
 			AmazonS3 s3 = new AmazonS3Client(credentials);
 			
 			String bucketName =  credentials.getAWSAccessKeyId().toLowerCase();
@@ -54,41 +63,46 @@ public class LocalApplication
 			s3.putObject(s3Request);
 			System.out.println("file " + imageFile.getName() + " was uploaded successfually \n");
 			
+			// creating the ec2 Service
+			AmazonEC2 ec2 = new AmazonEC2Client(credentials);
 			
-			//wait to user authorization
-			System.out.println("When uploading files to s3 is complete press enter to continue \n");
-			System.in.read();	
-			
-			// creating the ec2 manager
-			AmazonEC2 manager = new AmazonEC2Client(credentials);
-			
-			/*
-			List<Reservation> reservList = manager.describeInstances().getReservations();
+			// checks if a manager instance already exists
+			List<Reservation> reservList = ec2.describeInstances().getReservations();
 			for(Reservation reservation : reservList)
 			{
-				if(reservation.getInstances().get(0).getKeyName() == "manager")
+				List<Instance> instances = reservation.getInstances();
+				for(Instance instance: instances)
 				{
-					continue;
+					System.out.println("instance name: " + instance.getKeyName());
+					System.out.println("state: " + instance.getState());
 				}
-				else
-				{
-					
-				}
+//				if(reservation.getInstances().get(0).getKeyName() == "manager")
+//				{
+//					
+//					break;
+//				}
+//				else
+//				{
+//
+//
+//				}
 			}
-			*/
 			
-			// create a request for a computer
+			// create a request for a computer 
 			RunInstancesRequest request = new RunInstancesRequest();
-			request.setImageId("ami-8785a6ee"); // supports java ami-51792c38 
+			request.setImageId("ami-598caf30"); // supports java ami-51792c38 ami-8785a6ee 
 			request.setInstanceType(InstanceType.T1Micro.toString());
 			request.setMinCount(1);
 			request.setMaxCount(1);
 			request.withKeyName("manager");
 			request.withSecurityGroups("default");
-			request.withUserData(getScript());
+			request.withUserData(getScript(LMQueueUrl));
 			
 			// start instance
-			manager.runInstances(request);
+			ec2.runInstances(request);
+	        
+	        // send a test message
+	        sendMessage(sqs, LMQueueUrl, "Hello World");
 			
 			// TODO download the html file from S3
 			
@@ -110,15 +124,17 @@ public class LocalApplication
 		
 	}
 	
-	public static String getScript()
+	// the script to add to the node's user-data
+	public static String getScript(String url)
 	{
 		ArrayList<String> lines = new ArrayList<String>();
 		lines.add("#! /bin/bash");
-		lines.add("java -jar worker.jar");
+		lines.add("java -jar manager.jar " + url);
 		String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
 		return str;
 	}
 	
+	// joins all lines of script to one
     static String join(Collection<String> s, String delimiter) 
     {
         StringBuilder builder = new StringBuilder();
@@ -135,31 +151,21 @@ public class LocalApplication
         return builder.toString();
     }
     
-    public static AmazonSQS createQueue(AWSCredentials credentials)
+    // send message with the imageUrlKey, n (number of URLs per worker)
+    public static void sendMessage(AmazonSQS sqs, String QueueUrl, String message)
     {
-		// create SQS
-		AmazonSQS sqs = new AmazonSQSClient(credentials);
 		
-		// Create a queue
-        System.out.println("Creating a new SQS queue called LMQueue.\n");
-        CreateQueueRequest createQueueRequest = new CreateQueueRequest("LMQueue"+ UUID.randomUUID());
-        String LMQueueUrl = sqs.createQueue(createQueueRequest).getQueueUrl();
-		
-		// TODO send message with the imageUrlKey, n (number of URLs per worker)
         System.out.println("Sending a message to LMQueue.\n");
-        sqs.sendMessage(new SendMessageRequest(LMQueueUrl, "what message??!?!?!?!?!?!?!?"));
-		
-		// TODO receive message from manager
+        sqs.sendMessage(new SendMessageRequest(QueueUrl, message)); //LMQueueUrl
+    }
+    
+	// receive message from manager
+    public static String receiveMessage(AmazonSQS sqs, String QueueUrl)
+    {
         System.out.println("Receiving messages from LMQueue.\n");
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(LMQueueUrl);
+        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(QueueUrl);
         Message message = sqs.receiveMessage(receiveMessageRequest).getMessages().get(0);
-        for (Entry<String, String> entry : message.getAttributes().entrySet()) {
-            System.out.println("  Attribute");
-            System.out.println("    Name:  " + entry.getKey());
-            System.out.println("    Value: " + entry.getValue());
-        }
-        
-        return sqs;
+        return message.getBody();
     }
 
 }
