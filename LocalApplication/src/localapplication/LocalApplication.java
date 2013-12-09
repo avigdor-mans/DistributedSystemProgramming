@@ -42,11 +42,17 @@ public class LocalApplication
 			// create SQS Service
 			AmazonSQS sqs = new AmazonSQSClient(credentials);
 			
-			// Add a queue
-	        System.out.println("Creating a new SQS queue called LMQueue.\n");
-	        CreateQueueRequest createQueueRequest = new CreateQueueRequest("LMQueue"+ UUID.randomUUID());
-	        String LMQueueUrl = sqs.createQueue(createQueueRequest).getQueueUrl();
-			
+			// Add queues
+	        System.out.println("Creating a new SQS queue called localManagerQueue.\n");
+	        CreateQueueRequest createQueueRequest = new CreateQueueRequest("localManagerQueue_"+credentials.getAWSAccessKeyId().toLowerCase());
+	        String localManagerQueueUrl = sqs.createQueue(createQueueRequest).getQueueUrl();
+	        System.out.println("address: " + localManagerQueueUrl);
+	        
+	        System.out.println("Creating a new SQS queue called managerLocalQueue.\n");
+	        createQueueRequest = new CreateQueueRequest("managerLocalQueue_"+credentials.getAWSAccessKeyId().toLowerCase());
+	        String managerLocalQueueURL = sqs.createQueue(createQueueRequest).getQueueUrl();
+	        System.out.println("address: " + localManagerQueueUrl);
+	        
 			// create a S3 Service
 			AmazonS3 s3 = new AmazonS3Client(credentials);
 			
@@ -58,54 +64,28 @@ public class LocalApplication
             s3.createBucket(bucketName);
             
             // upload file image-urls.txt to S3
-            File imageFile = new File("../image-urls.txt");
-			PutObjectRequest s3Request = new PutObjectRequest(bucketName, imageUrlKey, imageFile);
-			s3.putObject(s3Request);
-			System.out.println("file " + imageFile.getName() + " was uploaded successfually \n");
+//            File imageFile = new File("../image-urls.txt");
+//			PutObjectRequest s3Request = new PutObjectRequest(bucketName, imageUrlKey, imageFile);
+//			s3.putObject(s3Request);
+//			System.out.println("file " + imageFile.getName() + " was uploaded successfually \n");
+			
+			System.out.println("Now you can upload files Manually,\n when done, Press enter to continue");
+			System.in.read();
 			
 			// creating the ec2 Service
 			AmazonEC2 ec2 = new AmazonEC2Client(credentials);
 			
 			// checks if a manager instance already exists
-			List<Reservation> reservList = ec2.describeInstances().getReservations();
-			for(Reservation reservation : reservList)
+			if(!isManagerRunning(ec2))
 			{
-				List<Instance> instances = reservation.getInstances();
-				for(Instance instance: instances)
-				{
-					System.out.println("instance name: " + instance.getKeyName());
-					System.out.println("state: " + instance.getState());
-				}
-//				if(reservation.getInstances().get(0).getKeyName() == "manager")
-//				{
-//					
-//					break;
-//				}
-//				else
-//				{
-//
-//
-//				}
+				System.out.println("Inizializing new manager");
+				Instance manager = initializeManager(ec2);
 			}
-			
-			// create a request for a computer 
-			RunInstancesRequest request = new RunInstancesRequest();
-			request.setImageId("ami-598caf30"); // supports java ami-51792c38 ami-8785a6ee 
-			request.setInstanceType(InstanceType.T1Micro.toString());
-			request.setMinCount(1);
-			request.setMaxCount(1);
-			request.withKeyName("manager");
-			request.withSecurityGroups("default");
-			request.withUserData(getScript(LMQueueUrl));
-			
-			// start instance
-			ec2.runInstances(request);
 	        
 	        // send a test message
-	        sendMessage(sqs, LMQueueUrl, "Hello World");
+	        sendMessage(sqs, LMQueueUrl, "batz");	
 			
 			// TODO download the html file from S3
-			
 			
 		}
 		catch (IOException e) 
@@ -123,13 +103,30 @@ public class LocalApplication
 		
 		
 	}
+	public static Instance initializeManager(AmazonEC2 ec2)
+	{
+		// create a request for a computer 
+		RunInstancesRequest request = new RunInstancesRequest();
+		request.setImageId("ami-51792c38"); // supports java ami-598caf30  ami-c35674aa 
+		request.setInstanceType(InstanceType.T1Micro.toString());
+		request.setMinCount(1);
+		request.setMaxCount(1);
+		request.withKeyName("manager");
+		request.withSecurityGroups("default");
+		request.withUserData(getScript());
+		
+		// start instance
+		return ec2.runInstances(request).getReservation().getInstances().get(0);
+	}
 	
 	// the script to add to the node's user-data
-	public static String getScript(String url)
+	public static String getScript()
 	{
 		ArrayList<String> lines = new ArrayList<String>();
 		lines.add("#! /bin/bash");
-		lines.add("java -jar manager.jar " + url);
+		lines.add("cd /");
+		lines.add("wget https://s3.amazonaws.com/akiajzfcy5fifmsaagrq/manager.jar");
+		lines.add("java -jar manager.jar");
 		String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
 		return str;
 	}
@@ -152,11 +149,10 @@ public class LocalApplication
     }
     
     // send message with the imageUrlKey, n (number of URLs per worker)
-    public static void sendMessage(AmazonSQS sqs, String QueueUrl, String message)
+    public static void sendMessage(AmazonSQS sqs,String url, String message)
     {
-		
         System.out.println("Sending a message to LMQueue.\n");
-        sqs.sendMessage(new SendMessageRequest(QueueUrl, message)); //LMQueueUrl
+        sqs.sendMessage(new SendMessageRequest(url, message)); //LMQueueUrl
     }
     
 	// receive message from manager
@@ -166,6 +162,34 @@ public class LocalApplication
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(QueueUrl);
         Message message = sqs.receiveMessage(receiveMessageRequest).getMessages().get(0);
         return message.getBody();
+    }
+    
+    public static boolean isManagerRunning(AmazonEC2 ec2)
+    {
+    	boolean res = false;
+    	
+		List<Reservation> reservList = ec2.describeInstances().getReservations();
+		if(!reservList.isEmpty())
+		{
+			for(Reservation reservation : reservList)
+			{
+				List<Instance> instances = reservation.getInstances();
+				for(Instance instance: instances)
+				{
+					System.out.println("found instance name: " + instance.getKeyName() + " State: " + instance.getState().getName());
+					if(instance.getKeyName() == "manager" && instance.getState().getName().equals("running"))
+					{
+						res = true;
+					}
+					else
+					{
+						res = false;
+					}
+				}
+			}
+		}
+		
+		return res;
     }
 
 }
