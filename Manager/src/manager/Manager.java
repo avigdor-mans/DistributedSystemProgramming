@@ -5,112 +5,78 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.commons.codec.binary.Base64;
-
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.PropertiesCredentials;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 
 public class Manager
 {
 	  public static void main(String[] args) throws Exception
 	  {
-		  // hard coded things
-		  String bucketName = "akiajzfcy5fifmsaagrq";
-		  String localManagerQueueUrl = "https://sqs.us-east-1.amazonaws.com/677422349073/localManagerQueue_akiajzfcy5fifmsaagrq";
-		  String managerLocalQueueUrl = "https://sqs.us-east-1.amazonaws.com/677422349073/managerLocalQueue_akiajzfcy5fifmsaagrq";
-
 		  // Initialization:
-		  AWSCredentials credentials = new BasicAWSCredentials("AKIAJZFCY5FIFMSAAGRQ","JHAB/lX5xrjOu+Vj6b294f0hpxF7oqJt8UGAItbo");
+		  AmazonServices services = new AmazonServices();
 		  
-		  // connect to the S3 service
-		  AmazonS3 s3 = new AmazonS3Client(credentials);
-		   
-		  // connect to SQS service
-		  AmazonSQS sqs = new AmazonSQSClient(credentials);
-		  
-		  // connect to EC2 service
-		  AmazonEC2 ec2 = new AmazonEC2Client(credentials);
-		  
-		  // create sqs for workers
-	      CreateQueueRequest createQueueRequest = new CreateQueueRequest("managerWorkerQueue");
-	      String managerWorkerQueueUrl = sqs.createQueue(createQueueRequest).getQueueUrl();
-	        
-	      CreateQueueRequest createQueueRequest1 = new CreateQueueRequest("workerManagerQueue");
-	      String workerManagerQueueUrl = sqs.createQueue(createQueueRequest1).getQueueUrl();
+		  // create queues for workers
+		  CreateQueueRequest createQueueRequest = new CreateQueueRequest("managerWorkerQueue_akiajzfcy5fifmsaagrq");
+	      services.sqs.createQueue(createQueueRequest).getQueueUrl();
 	      
+	      CreateQueueRequest createQueueRequest1 = new CreateQueueRequest("workerManagerQueue_akiajzfcy5fifmsaagrq");
+	      services.sqs.createQueue(createQueueRequest1).getQueueUrl();
 	      
 		  // Check if there a message in imageList SQS and execute it
 	      while(true)
 	      {
 	    	  // receive all messages from localManagerQueueUrl
-	    	  List<Message> messages = receiveMessages(sqs, localManagerQueueUrl);
+	    	  List<Message> messages = services.receiveMessages(services.localManagerQueueUrl);
 	    	  
 	    	  for (Message message : messages) 
 	    	  {
-	    		  // parse message ( n | key ) 
-	    		  String[] tokens = parseMessage(message.getBody());
+	    		  // parse message (local application id? | n | key ) 
+	    		  String[] tokens = services.parseMessage(message.getBody());
 	    		  
 	    		  int n = Integer.parseInt(tokens[0]);
 	    		  String imageTxtKey = tokens[1];
-
-	    		  deleteMessages(sqs, localManagerQueueUrl, message);
+	    		  
+	    		  // delete message
+	    		  services.deleteMessages(services.localManagerQueueUrl, message);
+	    		  
+	    		  services.sendMessage(services.managerWorkerQueueUrl, imageTxtKey);
+	    		  services.sendMessage(services.managerWorkerQueueUrl, "batz");
+	    		  services.sendMessage(services.managerWorkerQueueUrl, "hello");
+	    		  
 	    		  
 	    		  // download imageList file from S3
-	    		  File imageUrlListfile = downloadFile(s3, bucketName, imageTxtKey, "imageUrlList.txt");
+	    		  File imageUrlListfile = services.downloadFile(imageTxtKey, "imageUrlList.txt");
 	    		  
 				  // Count number of urls from the imageList file
 	    		  int numOfUrls = countNumOfUrlsFromFile(imageUrlListfile);
 	    		  
-	    		  createTemporaryFile("" + numOfUrls);
+	    		  File tempFile = createTemporaryFile("" + numOfUrls);
+	    		  
+	    		  services.uploadFile("testFileTxt", tempFile);
 	    		  
 	    		  int numOfWorkers = numOfUrls/n;
 	    		  
-	  	        // TODO For each url create massage and send to sqs  
-	  	        
-	    		// create a request for workers and initialize
-//	    		List<Instance> instances = initializeWorkers(ec2, numOfWorkers);
+	    		  // TODO For each url create massage and send to managerWorkerQueue
 	    		  
-		  	    // TODO Create HTML file from images
+	  	        
+	    		  // create a request for workers and initialize
+//	    		  List<Instance> instances = initializeWorkers(ec2, numOfWorkers);
 	    		  
-	  	        // TODO check if recieved back a message from workerManagerQueue ad add to html
+	    		  // TODO check if recieved back a message from workerManagerQueue add to returnedMessagesList
 	  	        
-	    		// TODO Add Last Lines to HTML
+	    		  // TODO Create HTML file from images
+
+	    		  // TODO Upload HTML file to S3
 	  	        
-	  	        // TODO Upload to S3
-//	    		uploadFile(s3, bucketName, "testFileTxt", createTemporaryFile("hello"));
-	  	        
-	  	        // TODO send message to LMResQ
+	    		  // TODO send message to localManagerQueue
 	    		  
 	    	  }
 
@@ -118,35 +84,6 @@ public class Manager
 		  
 		  //sendMessage(sqs, managerWorkerQueueUrl, str);
 	        
-	    }
-	  
-	    // send message to a specific queue
-	    public static void sendMessage(AmazonSQS sqs, String queueUrl , String message)
-	    {
-	        sqs.sendMessage(new SendMessageRequest(queueUrl, message));
-	    }
-	  
-		// receive message from a specific
-	    public static List<Message> receiveMessages(AmazonSQS sqs, String QueueUrl)
-	    {
-	        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(QueueUrl);
-	        List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
-	        
-	        return messages; 	//	message.getBody()
-	    }
-	    
-	    // delete message from queue 
-	    public static void deleteMessages(AmazonSQS sqs, String QueueUrl, Message message)
-	    {
-	    	String messageRecieptHandle = message.getReceiptHandle();
-            sqs.deleteMessage(new DeleteMessageRequest(QueueUrl, messageRecieptHandle));
-	    }
-	    
-	    // parse message
-	    public static String[] parseMessage(String msg)
-	    {
-		    String[] tokens = msg.split("\t");
-		    return tokens;
 	    }
 	    
 		// create temporary file
@@ -164,35 +101,6 @@ public class Manager
 				e.printStackTrace();
 			}
 			return file;
-	    }
-	    
-	    /**
-	     * upload file to S3
-	     * @param s3 - pointer to the S3 service
-	     * @param bucketName - the requested bucketName
-	     * @param file - the file wished to upload
-	     */
-	    public static void uploadFile(AmazonS3 s3, String bucketName, String keyName, File file)
-	    {
-			PutObjectRequest request = new PutObjectRequest(bucketName, keyName, file);
-			s3.putObject(request);
-	    }
-	    
-	    /**
-	     * download file from S3 and saves on PC
-	     * @param s3
-	     * @param bucketName
-	     * @param keyName
-	     * @param localFilePath
-	     * @return File objects
-	     */
-	    public static File downloadFile(AmazonS3 s3, String bucketName, String keyName , String localFilePath)
-	    {
-	    	File localFile = new File(localFilePath);
-	    	
-	    	ObjectMetadata object = s3.getObject(new GetObjectRequest(bucketName, keyName), localFile);
-	    	
-	    	return localFile;
 	    }
 	    
 	    // counts the number of URLs from file
@@ -218,34 +126,7 @@ public class Manager
 			return count;
 	    }
 	    
-		public static String getScript()
-		{
-			ArrayList<String> lines = new ArrayList<String>();
-			lines.add("#! /bin/bash");
-			lines.add("wget https://s3.amazonaws.com/akiajzfcy5fifmsaagrq/worker.jar");
-			lines.add("java -jar /worker.jar");
-			String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
-			return str;
-		}
-	    
-		// joins all lines of script to one
-	    static String join(Collection<String> s, String delimiter) 
-	    {
-	        StringBuilder builder = new StringBuilder();
-	        Iterator<String> iter = s.iterator();
-	        while (iter.hasNext())
-	        {
-	            builder.append(iter.next());
-	            if (!iter.hasNext())
-	            {
-	                break;
-	            }
-	            builder.append(delimiter);
-	        }
-	        return builder.toString();
-	    }
-	    
-	    public static List<Instance> initializeWorkers(AmazonEC2 ec2, int numOfWorkers)
+	    public static List<Instance> initializeWorkers(AmazonServices services, int numOfWorkers)
 	    {
 			RunInstancesRequest request = new RunInstancesRequest();
 			request.setImageId("ami-51792c38"); // supports java ami-598caf30  ami-c35674aa 
@@ -254,10 +135,10 @@ public class Manager
 			request.setMaxCount(numOfWorkers);
 			request.withKeyName("Worker_" + UUID.randomUUID());
 			request.withSecurityGroups("default");
-			request.withUserData(getScript());
+			request.withUserData(services.getScript());
 			
 			// start instance
-			List<Instance> instances = ec2.runInstances(request).getReservation().getInstances();
+			List<Instance> instances = services.ec2.runInstances(request).getReservation().getInstances();
 			return instances;
 	    }
 
