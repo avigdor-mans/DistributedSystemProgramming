@@ -13,8 +13,6 @@ import java.net.URL;
 
 import javax.imageio.ImageIO;
 
-import com.amazonaws.services.datapipeline.model.InstanceIdentity;
-
 public class ImageHandler
 {
 	public static File createStamp(String url, String fileName) throws IOException
@@ -50,7 +48,7 @@ public class ImageHandler
 		g2d.setPaint(Color.red);
 
 		// get instance-id 
-		//String instanceId = getInstanceId();
+		// TODO String instanceId = getInstanceId();
 		String instanceId = ""; 
 
 		// create date's string

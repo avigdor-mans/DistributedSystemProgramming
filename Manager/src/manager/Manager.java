@@ -35,85 +35,61 @@ public class Manager
 	      while(true)
 	      {
 	    	  // receive all messages from localManagerQueueUrl
-	    	  List<Message> messages = services.receiveMessages(services.localManagerQueueUrl);
-	    	  String localApplicationId = null;
-	    	  
-	    	  for (Message message : messages) 
+	    	  for (Message message : services.receiveMessages(services.localManagerQueueUrl)) 
 	    	  {
-	    		  // parse message (local application id | n | key ) 
+	    		  // parse message ( local application id | n | image url key | output file name ) 
 	    		  String[] tokens = services.parseMessage(message.getBody());
 	    		  
-	    		  String loacalApplicationName = tokens[0];
+	    		  String loacalApplicationId = tokens[0];
 	    		  int n = Integer.parseInt(tokens[1]);
-	    		  String imageTxtKey = tokens[2];
-	    		  String outputPath = tokens[3];
+	    		  String imageUrlListKey = tokens[2];
+	    		  String outputFileKey = tokens[3];
+	    		  
+	    		  // create Task from imformation
+	    		  Task task = new Task(loacalApplicationId,n , imageUrlListKey, outputFileKey);
 	    		  
 	    		  // delete message
 	    		  services.deleteMessages(services.localManagerQueueUrl, message);
 	    		  
 	    		  // download imageList file from S3
-	    		  File imageUrlListfile = services.downloadFile(imageTxtKey, "imageUrlList.txt");
+	    		  File imageUrlListfile = services.downloadFile(imageUrlListKey, "imageUrlList.txt");
 	    		  
 				  // Count number of urls from the imageList file
 	    		  LinkedList<String> oldUrls = getUrlsFromFile(imageUrlListfile);
 	    		  int numOfUrls = oldUrls.size();
-	    		  
-	    		  System.out.println("num of urls: " + numOfUrls);
-	    		  
-//	    		  File tempFile = createTemporaryFile("" + numOfUrls);
-//	    		  services.uploadFile("testFileTxt", tempFile);
+	    		  task.setOldUrls(oldUrls);
+	    		  task.setNumberOfImages(numOfUrls);
 	    		  
 	    		  int numOfWorkers = numOfUrls/n;
 	    		  
-	    		  System.out.println("num of workers: " + numOfWorkers);
-	    		  
 	    		  // For each url create massage and send to managerWorkerQueue
-//	    		  createTasksForWorkers(services, oldUrls, loacalApplicationName);
+	    		  createTasksForWorkers(services, task);
 	    		  
 	    		  System.out.println("oldUrls: " + oldUrls.size());
 	    		  
 	    		  // create a request for workers and initialize
-//	    		  List<Instance> instances = initializeWorkers(ec2, numOfWorkers);
+	    		  List<Instance> instances = initializeWorkers(services, numOfWorkers);
 	    		  
 	    		  // check if recieved back a message from workerManagerQueue add to resultList
-	    		  oldUrls.clear();
-	    		  LinkedList<String> newUrls = new LinkedList<String>();
+	    		  task.getOldUrls().clear();
+	    		  recieveCompletedTasks(services,task);
 	    		  
-	    		  localApplicationId = recieveCompletedTasks(services,oldUrls,newUrls);
-	    		  
-	    		  System.out.println("oldUrls: " + oldUrls.size());
-	    		  System.out.println("oldUrls: " + oldUrls.size());
+	    		  System.out.println("oldUrls's size: " + task.getOldUrls().size());
+	    		  System.out.println("newUrls's sise: " + task.getNewUrls().size());
 	  	        
 	    		  // Create HTML file from images
-	    		  File outputfile = HtmlHandler.createHtmlFile(oldUrls, newUrls, outputPath);
+	    		  File outputfile = HtmlHandler.createHtmlFile(oldUrls, task.getNewUrls(), outputFileKey);
 
 	    		  // Upload HTML file to S3
-	    		  services.uploadFile(outputPath, outputfile);
+	    		  services.uploadFile(outputFileKey, outputfile);
+	    		  System.out.println("HTML file was uploaded");
 	  	        
 	    		  // send message to localManagerQueue
-	    		  services.sendMessage(services.managerLocalQueueUrl, "done");
+	    		  services.sendMessage(services.managerLocalQueueUrl, loacalApplicationId + "\t" + outputFileKey);
 	    		  
+	    		  System.out.println("Done");
 	    	  }
-
 	      }
-	        
-	    }
-	    
-		// create temporary file
-	    public static File createTemporaryFile(String content)
-	    {
-			File file = null;
-			try
-			{
-				file = File.createTempFile("testFile", ".txt");
-				Writer writer = new OutputStreamWriter(new FileOutputStream(file));
-				writer.write(content);
-				writer.close();
-			} catch (IOException e)
-			{			
-				e.printStackTrace();
-			}
-			return file;
 	    }
 	    
 	    // counts the number of URLs from file
@@ -131,6 +107,7 @@ public class Manager
 						urls.add(line);
 					}
 				}
+				br.close();
 			}
 			catch (IOException e)
 			{
@@ -155,34 +132,53 @@ public class Manager
 			return instances;
 	    }
 
-	    public static void createTasksForWorkers(AmazonServices services, LinkedList<String> urls, String loacalApplicationName)
+	    public static void createTasksForWorkers(AmazonServices services, Task task)
 	    {
-	    	while(!urls.isEmpty())
+	    	while(!task.getOldUrls().isEmpty())
 	    	{	
-	    		String url = urls.pop();
-	    		services.sendMessage(services.managerWorkerQueueUrl,
-	    							 loacalApplicationName + "\t" + url);
+	    		String url = task.getOldUrls().pop();
+	    		services.sendMessage(services.managerWorkerQueueUrl, url);
 	    	}
-	    	
-	    	
 	    }
 
-	    public static String recieveCompletedTasks(AmazonServices services, LinkedList<String> oldUrls, LinkedList<String> newUrls)
+	    public static void recieveCompletedTasks(AmazonServices services, Task task)
 	    {
-	    	String localAplicationId = null;
-
-	    	List<Message> workersResultMessages = services.receiveMessages(services.workerManagerQueueUrl);
-	    	for(Message msg : workersResultMessages)
+	    	System.out.println("NumOfImages: " + task.getNumberOfImages());
+	    	System.out.println("NumOfImagesStamped: " + task.getNumberOfImagesStamped());
+	    	System.out.println("isReady: " + task.isReady());
+	    	
+	    	while(!task.isReady())
 	    	{
-	    		String[] tokens = services.parseMessage(msg.getBody());
-	    		localAplicationId = tokens[0];
-	    		String oldUrl = tokens[1];
-	    		String newUrl = tokens[2];
-	    		
-	    		oldUrls.add(oldUrl);
-	    		newUrls.add(newUrl);
-	    		
+	    		for(Message msg : services.receiveMessages(services.workerManagerQueueUrl))
+	    		{
+	    			String[] tokens = services.parseMessage(msg.getBody());
+	    			services.deleteMessages(services.workerManagerQueueUrl, msg);
+
+	    			String oldUrl = tokens[0];
+	    			String newUrl = tokens[1];
+
+	    			// update task
+	    			task.getOldUrls().add(oldUrl);
+	    			task.getNewUrls().add(newUrl);
+	    			task.incNumberOfImagesStamped();
+	    		}
 	    	}
-	    	return localAplicationId;
+	    }
+	    
+		// create temporary file
+	    public static File createTemporaryFile(String content)
+	    {
+			File file = null;
+			try
+			{
+				file = File.createTempFile("testFile", ".txt");
+				Writer writer = new OutputStreamWriter(new FileOutputStream(file));
+				writer.write(content);
+				writer.close();
+			} catch (IOException e)
+			{			
+				e.printStackTrace();
+			}
+			return file;
 	    }
 }

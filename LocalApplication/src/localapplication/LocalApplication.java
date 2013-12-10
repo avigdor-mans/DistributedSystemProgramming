@@ -11,6 +11,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
+import com.amazonaws.services.sqs.model.Message;
 
 public class LocalApplication
 {
@@ -30,10 +31,10 @@ public class LocalApplication
 			services.initQueues();
             
             // upload file image-urls.txt to S3
-			String imageUrlKey = "imageUrlTxt";
-			// TODO change the path to arg[0]
-            File imageFile = new File("../image-urls.txt"); 
-            services.uploadFile(imageUrlKey, imageFile);
+			String imageUrlListKey = "imageUrlList_" + UUID.randomUUID();
+
+			File imageFile = new File(args[0]); 
+            services.uploadFile(imageUrlListKey, imageFile);
 			System.out.println("file " + imageFile.getName() + " was uploaded successfually \n");
 
 			// wait for user
@@ -41,21 +42,22 @@ public class LocalApplication
 			System.in.read();
 			
 			// checks if a manager instance already exists
-//			if(!isManagerRunning(services.ec2))
-//			{
-//				System.out.println("Inizializing new manager");
-//				Instance manager = initializeManager(services);
-//			}
+			if(!isManagerRunning(services.ec2))
+			{
+				System.out.println("Inizializing new manager");
+				Instance manager = initializeManager(services);
+			}
 	        
 	        // send a message to Manager 					   
-			//( local application id | n | output file name | image url key )	args[1] = n, args[2] = outputfile
-	        services.sendMessage(services.localManagerQueueUrl, localApplicationId+"\t"+args[1]+"\t"+imageUrlKey+"\t"+args[2]); 
+			//( local application id | n | image url key | output file name )		    	args[1] = n							  args[2] = outputfile
+	        services.sendMessage(services.localManagerQueueUrl, localApplicationId + "\t" + args[1] + "\t"+imageUrlListKey + "\t"+args[2]); 
 
 	        // receive message
-//	        Message message = services.receiveMessages(services.managerLocalQueueUrl).get(0);
+	        System.out.println("Wating for result, please wait...");
+	        String outputFileKey = waitForAnswer(services, localApplicationId);
 			
 			// download the HTML file from S3
-//			services.downloadFile("resultHtmlFile", "result.html");
+			services.downloadFile(outputFileKey, args[2]);
 
 	        System.out.println("Done");
 		}
@@ -117,5 +119,23 @@ public class LocalApplication
 		
 		return res;
     }
+    
+    public static String waitForAnswer(AmazonServicesLocal services,String localApplicationId)
+    {
+    	String res = null;
+    	while(res == null)
+    	{
+    		for(Message msg : services.receiveMessages(services.managerLocalQueueUrl))
+    		{
+    			String[] tokens = services.parseMessage(msg.getBody());
+    			if(localApplicationId.equals(tokens[0]))
+    			{
+    				res = tokens[1];
+    		        services.deleteMessages(services.managerLocalQueueUrl, msg);
+    			}
+    		}
+    	}
+    	return res;
+	}
 
 }

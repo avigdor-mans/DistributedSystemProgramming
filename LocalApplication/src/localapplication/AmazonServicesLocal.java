@@ -17,7 +17,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
@@ -140,7 +139,7 @@ public class AmazonServicesLocal
 	  {
 		  File localFile = new File(localFilePath);
 		
-		  ObjectMetadata object = this.s3.getObject(new GetObjectRequest(this.bucketName, keyName), localFile);
+		  this.s3.getObject(new GetObjectRequest(this.bucketName, keyName), localFile);
 		
 		  return localFile;
 	  }

@@ -15,7 +15,6 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
@@ -114,7 +113,7 @@ public class AmazonServices
 		  File localFile = new File(localFilePath);
 		  GetObjectRequest request = new GetObjectRequest(this.bucketName, keyName);
 		  
-		  ObjectMetadata object = this.s3.getObject(request, localFile);
+		  this.s3.getObject(request, localFile);
 		
 		  return localFile;
 	  }
