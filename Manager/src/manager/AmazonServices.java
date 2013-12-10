@@ -94,8 +94,7 @@ public class AmazonServices
 	  
 	  /**
 	   * upload file to S3
-	   * @param s3 - pointer to the S3 service
-	   * @param bucketName - the requested bucketName
+	   * @param filekeyName - the requested key name
 	   * @param file - the file wished to upload
 	   */
 	  public void uploadFile(String keyName, File file)
@@ -106,8 +105,6 @@ public class AmazonServices
 	  
 	  /**
 	   * download file from S3 and saves on PC
-	   * @param s3
-	   * @param bucketName
 	   * @param keyName
 	   * @param localFilePath
 	   * @return File objects

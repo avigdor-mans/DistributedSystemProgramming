@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,54 +36,66 @@ public class Manager
 	      {
 	    	  // receive all messages from localManagerQueueUrl
 	    	  List<Message> messages = services.receiveMessages(services.localManagerQueueUrl);
+	    	  String localApplicationId = null;
 	    	  
 	    	  for (Message message : messages) 
 	    	  {
-	    		  // parse message (local application id? | n | key ) 
+	    		  // parse message (local application id | n | key ) 
 	    		  String[] tokens = services.parseMessage(message.getBody());
 	    		  
-	    		  int n = Integer.parseInt(tokens[0]);
-	    		  String imageTxtKey = tokens[1];
+	    		  String loacalApplicationName = tokens[0];
+	    		  int n = Integer.parseInt(tokens[1]);
+	    		  String imageTxtKey = tokens[2];
+	    		  String outputPath = tokens[3];
 	    		  
 	    		  // delete message
 	    		  services.deleteMessages(services.localManagerQueueUrl, message);
-	    		  
-	    		  services.sendMessage(services.managerWorkerQueueUrl, imageTxtKey);
-	    		  services.sendMessage(services.managerWorkerQueueUrl, "batz");
-	    		  services.sendMessage(services.managerWorkerQueueUrl, "hello");
-	    		  
 	    		  
 	    		  // download imageList file from S3
 	    		  File imageUrlListfile = services.downloadFile(imageTxtKey, "imageUrlList.txt");
 	    		  
 				  // Count number of urls from the imageList file
-	    		  int numOfUrls = countNumOfUrlsFromFile(imageUrlListfile);
+	    		  LinkedList<String> oldUrls = getUrlsFromFile(imageUrlListfile);
+	    		  int numOfUrls = oldUrls.size();
 	    		  
-	    		  File tempFile = createTemporaryFile("" + numOfUrls);
+	    		  System.out.println("num of urls: " + numOfUrls);
 	    		  
-	    		  services.uploadFile("testFileTxt", tempFile);
+//	    		  File tempFile = createTemporaryFile("" + numOfUrls);
+//	    		  services.uploadFile("testFileTxt", tempFile);
 	    		  
 	    		  int numOfWorkers = numOfUrls/n;
 	    		  
-	    		  // TODO For each url create massage and send to managerWorkerQueue
+	    		  System.out.println("num of workers: " + numOfWorkers);
 	    		  
-	  	        
+	    		  // For each url create massage and send to managerWorkerQueue
+//	    		  createTasksForWorkers(services, oldUrls, loacalApplicationName);
+	    		  
+	    		  System.out.println("oldUrls: " + oldUrls.size());
+	    		  
 	    		  // create a request for workers and initialize
 //	    		  List<Instance> instances = initializeWorkers(ec2, numOfWorkers);
 	    		  
-	    		  // TODO check if recieved back a message from workerManagerQueue add to returnedMessagesList
+	    		  // check if recieved back a message from workerManagerQueue add to resultList
+	    		  oldUrls.clear();
+	    		  LinkedList<String> newUrls = new LinkedList<String>();
+	    		  
+	    		  localApplicationId = recieveCompletedTasks(services,oldUrls,newUrls);
+	    		  
+	    		  System.out.println("oldUrls: " + oldUrls.size());
+	    		  System.out.println("oldUrls: " + oldUrls.size());
 	  	        
-	    		  // TODO Create HTML file from images
+	    		  // Create HTML file from images
+	    		  File outputfile = HtmlHandler.createHtmlFile(oldUrls, newUrls, outputPath);
 
-	    		  // TODO Upload HTML file to S3
+	    		  // Upload HTML file to S3
+	    		  services.uploadFile(outputPath, outputfile);
 	  	        
-	    		  // TODO send message to localManagerQueue
+	    		  // send message to localManagerQueue
+	    		  services.sendMessage(services.managerLocalQueueUrl, "done");
 	    		  
 	    	  }
 
 	      }
-		  
-		  //sendMessage(sqs, managerWorkerQueueUrl, str);
 	        
 	    }
 	    
@@ -104,9 +117,9 @@ public class Manager
 	    }
 	    
 	    // counts the number of URLs from file
-	    public static int countNumOfUrlsFromFile(File file)
+	    public static LinkedList<String> getUrlsFromFile(File file)
 	    {
-	    	int count = 0;
+	    	LinkedList<String> urls = new LinkedList<String>();
 			try
 			{
 				String line;
@@ -115,7 +128,7 @@ public class Manager
 				{
 					if(line.contains("http://"))
 					{
-						count++;
+						urls.add(line);
 					}
 				}
 			}
@@ -123,7 +136,7 @@ public class Manager
 			{
 				e.printStackTrace();
 			}
-			return count;
+			return urls;
 	    }
 	    
 	    public static List<Instance> initializeWorkers(AmazonServices services, int numOfWorkers)
@@ -142,5 +155,34 @@ public class Manager
 			return instances;
 	    }
 
+	    public static void createTasksForWorkers(AmazonServices services, LinkedList<String> urls, String loacalApplicationName)
+	    {
+	    	while(!urls.isEmpty())
+	    	{	
+	    		String url = urls.pop();
+	    		services.sendMessage(services.managerWorkerQueueUrl,
+	    							 loacalApplicationName + "\t" + url);
+	    	}
+	    	
+	    	
+	    }
 
+	    public static String recieveCompletedTasks(AmazonServices services, LinkedList<String> oldUrls, LinkedList<String> newUrls)
+	    {
+	    	String localAplicationId = null;
+
+	    	List<Message> workersResultMessages = services.receiveMessages(services.workerManagerQueueUrl);
+	    	for(Message msg : workersResultMessages)
+	    	{
+	    		String[] tokens = services.parseMessage(msg.getBody());
+	    		localAplicationId = tokens[0];
+	    		String oldUrl = tokens[1];
+	    		String newUrl = tokens[2];
+	    		
+	    		oldUrls.add(oldUrl);
+	    		newUrls.add(newUrl);
+	    		
+	    	}
+	    	return localAplicationId;
+	    }
 }

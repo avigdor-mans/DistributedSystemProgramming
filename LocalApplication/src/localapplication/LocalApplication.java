@@ -3,6 +3,7 @@ package localapplication;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.ec2.AmazonEC2;
@@ -20,6 +21,7 @@ public class LocalApplication
 		{
 			// Init services
 			AmazonServicesLocal services = new AmazonServicesLocal();
+			String localApplicationId = UUID.randomUUID().toString();
 			
 			// creating the s3 bucket
 			services.createBucket(services.bucketName);
@@ -29,7 +31,8 @@ public class LocalApplication
             
             // upload file image-urls.txt to S3
 			String imageUrlKey = "imageUrlTxt";
-            File imageFile = new File("../image-urls.txt");
+			// TODO change the path to arg[0]
+            File imageFile = new File("../image-urls.txt"); 
             services.uploadFile(imageUrlKey, imageFile);
 			System.out.println("file " + imageFile.getName() + " was uploaded successfually \n");
 
@@ -44,9 +47,10 @@ public class LocalApplication
 //				Instance manager = initializeManager(services);
 //			}
 	        
-	        // send a test message
-	        services.sendMessage(services.localManagerQueueUrl, "6\t"+imageUrlKey);
-	        
+	        // send a message to Manager 					   
+			//( local application id | n | output file name | image url key )	args[1] = n, args[2] = outputfile
+	        services.sendMessage(services.localManagerQueueUrl, localApplicationId+"\t"+args[1]+"\t"+imageUrlKey+"\t"+args[2]); 
+
 	        // receive message
 //	        Message message = services.receiveMessages(services.managerLocalQueueUrl).get(0);
 			

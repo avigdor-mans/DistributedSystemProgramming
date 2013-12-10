@@ -48,17 +48,7 @@ public class Run
         // Receive messages
         
         
-		// TODO Check MWAssQ
-		
-		// TODO Download the image file from url
-		
-		// TODO Add text to image
-		
-		// TODO Upload result to S3
-		
-		// TODO add message to MWResQ
-		
-		// TODO remove message if already in MWAssQ 
+ 
 	}
 
 }
