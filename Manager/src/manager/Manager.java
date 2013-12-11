@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceType;
+import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.Message;
@@ -43,7 +44,7 @@ public class Manager
 	    		  String loacalApplicationId = tokens[0];
 	    		  int n = Integer.parseInt(tokens[1]);
 	    		  String imageUrlListKey = tokens[2];
-	    		  String outputFileKey = tokens[3];
+	    		  String outputFileKey = tokens[3] + UUID.randomUUID();
 	    		  
 	    		  // create Task from imformation
 	    		  Task task = new Task(loacalApplicationId,n , imageUrlListKey, outputFileKey);
@@ -65,10 +66,15 @@ public class Manager
 	    		  // For each url create massage and send to managerWorkerQueue
 	    		  createTasksForWorkers(services, task);
 	    		  
-	    		  System.out.println("oldUrls: " + oldUrls.size());
+	    		  System.out.println("creating workers");
 	    		  
 	    		  // create a request for workers and initialize
-	    		  List<Instance> instances = initializeWorkers(services, numOfWorkers);
+	    		  int numOfAvailableWorkers = getNumOfAvailableWorkers(services);
+	    		  if(numOfWorkers > numOfAvailableWorkers)
+	    		  {
+		    		  initializeWorkers(services, numOfWorkers - numOfAvailableWorkers);	    			  
+	    		  }
+
 	    		  
 	    		  // check if recieved back a message from workerManagerQueue add to resultList
 	    		  task.getOldUrls().clear();
@@ -116,6 +122,25 @@ public class Manager
 			return urls;
 	    }
 	    
+	    public static int getNumOfAvailableWorkers(AmazonServices services)
+	    {
+	    	int ans = 0;
+	    	List<Reservation> reservList = services.ec2.describeInstances().getReservations();
+	    	for(Reservation reservation : reservList)
+			{
+				List<Instance> instances = reservation.getInstances();
+				for(Instance instance: instances)
+				{
+					if(instance.getState().getName().equals("running") && (instance.getKeyName() == null || !instance.getKeyName().equals("manager")))
+					{
+						ans ++;
+					}
+				}
+			}
+	    	
+			return ans;
+		}
+	    
 	    public static List<Instance> initializeWorkers(AmazonServices services, int numOfWorkers)
 	    {
 			RunInstancesRequest request = new RunInstancesRequest();
@@ -123,7 +148,6 @@ public class Manager
 			request.setInstanceType(InstanceType.T1Micro.toString());
 			request.setMinCount(numOfWorkers);
 			request.setMaxCount(numOfWorkers);
-			request.withKeyName("Worker_" + UUID.randomUUID());
 			request.withSecurityGroups("default");
 			request.withUserData(services.getScript());
 			

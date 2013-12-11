@@ -48,8 +48,8 @@ public class ImageHandler
 		g2d.setPaint(Color.red);
 
 		// get instance-id 
-		// TODO String instanceId = getInstanceId();
-		String instanceId = ""; 
+		String instanceId = getInstanceId();
+//		String instanceId = ""; 
 
 		// create date's string
 		String date = new java.util.Date().toString();
@@ -76,6 +76,7 @@ public class ImageHandler
 		URL instanceIdUrl = new URL("http://169.254.169.254/latest/meta-data/instance-id");
 		BufferedReader in = new BufferedReader(new InputStreamReader(instanceIdUrl.openStream()));
 		line = in.readLine();
+		System.out.println(line);
 		
         in.close();
         

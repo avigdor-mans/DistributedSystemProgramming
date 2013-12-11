@@ -1,12 +1,9 @@
 package worker;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.codec.binary.Base64;
+
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -14,6 +11,7 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -74,7 +72,7 @@ public class AmazonServices
 		  ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueUrl);
 		  List<Message> messages = this.sqs.receiveMessage(receiveMessageRequest).getMessages();
 		  
-		  return messages; 	//	message.getBody()
+		  return messages; 
 	  }
 	   
 	  // delete message from queue 
@@ -99,12 +97,12 @@ public class AmazonServices
 	  public void uploadFile(String keyName, File file)
 	  {
 		  PutObjectRequest request = new PutObjectRequest(this.bucketName, keyName, file);
+		  request.setCannedAcl(CannedAccessControlList.PublicRead);
 		  this.s3.putObject(request);
 	  }
 	  
 	  /**
 	   * download file from S3 and saves on PC
-	   * @param s3
 	   * @param keyName
 	   * @param localFilePath
 	   * @return File objects
@@ -117,34 +115,6 @@ public class AmazonServices
 		  this.s3.getObject(request, localFile);  // returns ObjectMetadata if needed
 		
 		  return localFile;
-	  }
-	  
-	  public String getScript()
-	  {
-		  ArrayList<String> lines = new ArrayList<String>();
-		  lines.add("#! /bin/bash");
-		  lines.add("cd /");
-		  lines.add("wget https://s3.amazonaws.com/akiajzfcy5fifmsaagrq/worker.jar");
-		  lines.add("sudo java -jar worker.jar");
-		  String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
-		  return str;
-	  }
-	    
-	  // joins all lines of script to one
-	  public String join(Collection<String> s, String delimiter) 
-	  {
-		  StringBuilder builder = new StringBuilder();
-		  Iterator<String> iter = s.iterator();
-		  while (iter.hasNext())
-		  {
-			  builder.append(iter.next());
-			  if (!iter.hasNext())
-			  {
-				  break;
-			  }
-			  builder.append(delimiter);
-		  }
-		  return builder.toString();
 	  }
 	  
 }

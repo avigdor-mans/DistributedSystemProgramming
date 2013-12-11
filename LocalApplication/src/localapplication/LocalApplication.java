@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.UUID;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.ec2.model.Reservation;
@@ -42,7 +41,7 @@ public class LocalApplication
 			System.in.read();
 			
 			// checks if a manager instance already exists
-			if(!isManagerRunning(services.ec2))
+			if(!isManagerRunning(services))
 			{
 				System.out.println("Inizializing new manager");
 				Instance manager = initializeManager(services);
@@ -92,22 +91,24 @@ public class LocalApplication
 		return services.ec2.runInstances(request).getReservation().getInstances().get(0);
 	}
 	
-    public static boolean isManagerRunning(AmazonEC2 ec2)
+    public static boolean isManagerRunning(AmazonServicesLocal services)
     {
     	boolean res = false;
     	
-		List<Reservation> reservList = ec2.describeInstances().getReservations();
+		List<Reservation> reservList = services.ec2.describeInstances().getReservations();
 		if(!reservList.isEmpty())
 		{
+			whenFound:
 			for(Reservation reservation : reservList)
 			{
 				List<Instance> instances = reservation.getInstances();
 				for(Instance instance: instances)
 				{
 					System.out.println("found instance name: " + instance.getKeyName() + " State: " + instance.getState().getName());
-					if(instance.getKeyName() == "manager" && instance.getState().getName().equals("running"))
+					if(instance.getKeyName() != null && instance.getKeyName().equals("manager") && instance.getState().getName().equals("running"))
 					{
 						res = true;
+						break whenFound;
 					}
 					else
 					{

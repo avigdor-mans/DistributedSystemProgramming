@@ -14,6 +14,7 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -74,7 +75,7 @@ public class AmazonServices
 		  ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueUrl);
 		  List<Message> messages = this.sqs.receiveMessage(receiveMessageRequest).getMessages();
 		  
-		  return messages; 	//	message.getBody()
+		  return messages;
 	  }
 	   
 	  // delete message from queue 
@@ -99,6 +100,7 @@ public class AmazonServices
 	  public void uploadFile(String keyName, File file)
 	  {
 		  PutObjectRequest request = new PutObjectRequest(this.bucketName, keyName, file);
+		  request.setCannedAcl(CannedAccessControlList.PublicRead);
 		  this.s3.putObject(request);
 	  }
 	  
@@ -123,8 +125,9 @@ public class AmazonServices
 		  ArrayList<String> lines = new ArrayList<String>();
 		  lines.add("#! /bin/bash");
 		  lines.add("cd /");
+		  lines.add("touch tmpImage.png");
 		  lines.add("wget https://s3.amazonaws.com/akiajzfcy5fifmsaagrq/worker.jar");
-		  lines.add("sudo java -jar worker.jar");
+		  lines.add("java -jar worker.jar >& 1.log");
 		  String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
 		  return str;
 	  }

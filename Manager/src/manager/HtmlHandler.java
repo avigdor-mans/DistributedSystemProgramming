@@ -22,7 +22,7 @@ public class HtmlHandler
 			String newUrl = newUrls.remove();
 			
 			// for each picture: create the new picture with a link to the original picture
-			buffWriter.write("<a href=\""+oldUrl+"\"> <image src=\""+newUrl+"\"> </a>\n");
+			buffWriter.write("<a href=\""+oldUrl+"\">\n\t<image src=\""+newUrl+"\" width=\"400\" height=\"400\">\n</a>\n");
 		}
 
 		buffWriter.write("</body>\n");

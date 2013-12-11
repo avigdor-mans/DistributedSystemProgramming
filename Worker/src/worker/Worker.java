@@ -31,7 +31,7 @@ public class Worker
 				  
 				  try
 				  {
-					  file = ImageHandler.createStamp(oldUrl, fileNamekey);
+					  file = ImageHandler.createStamp(oldUrl, "tmpImage.png");
 				  }
 				  catch (IOException e)
 				  {
@@ -43,8 +43,9 @@ public class Worker
 				  // Upload result to S3
 				  services.uploadFile(fileNamekey, file);
 				  
+				  String newUrl = "https://s3.amazonaws.com/akiajzfcy5fifmsaagrq/" + fileNamekey;
 				  // add message to workerManagerQueue	( old url | new url )
-				  services.sendMessage(services.workerManagerQueueUrl, oldUrl + "\t" + fileNamekey);
+				  services.sendMessage(services.workerManagerQueueUrl, oldUrl + "\t" + newUrl);
 				  
 				  System.out.println("image: " + fileNamekey + " was created");
 			  }

@@ -150,8 +150,9 @@ public class AmazonServicesLocal
 		  ArrayList<String> lines = new ArrayList<String>();
 		  lines.add("#! /bin/bash");
 		  lines.add("cd /");
+		  lines.add("touch imageUrlList.txt");
 		  lines.add("wget https://s3.amazonaws.com/akiajzfcy5fifmsaagrq/manager.jar");
-		  lines.add("sudo java -jar worker.jar>& 1.log");
+		  lines.add("java -jar manager.jar >& 1.log");
 		  String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
 		  return str;
 	  }
