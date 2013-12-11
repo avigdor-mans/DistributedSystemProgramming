@@ -151,7 +151,8 @@ public class AmazonServicesLocal
 		  lines.add("#! /bin/bash");
 		  lines.add("cd /");
 		  lines.add("touch imageUrlList.txt");
-		  lines.add("wget https://s3.amazonaws.com/akiajzfcy5fifmsaagrq/manager.jar");
+		  lines.add("wget https://s3.amazonaws.com/akiajzfcy5fifmsaagrq/manager.zip");
+		  lines.add("unzip -P chenbardrorven manager.zip");
 		  lines.add("java -jar manager.jar >& 1.log");
 		  String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
 		  return str;

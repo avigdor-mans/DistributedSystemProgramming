@@ -126,7 +126,8 @@ public class AmazonServices
 		  lines.add("#! /bin/bash");
 		  lines.add("cd /");
 		  lines.add("touch tmpImage.png");
-		  lines.add("wget https://s3.amazonaws.com/akiajzfcy5fifmsaagrq/worker.jar");
+		  lines.add("wget https://s3.amazonaws.com/akiajzfcy5fifmsaagrq/worker.zip");
+		  lines.add("unzip -P chenbardrorven worker.zip");
 		  lines.add("java -jar worker.jar >& 1.log");
 		  String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
 		  return str;
