@@ -35,7 +35,7 @@ public class AmazonServices
 	  
 	  public AmazonServices()
 	  {
-		  this.credentials = new BasicAWSCredentials("AKIAJZFCY5FIFMSAAGRQ","JHAB/lX5xrjOu+Vj6b294f0hpxF7oqJt8UGAItbo"); 
+		  this.credentials = new BasicAWSCredentials("credentials"); 
 		  
 		  // connect to the S3 service
 		  this.s3 = new AmazonS3Client(credentials);
