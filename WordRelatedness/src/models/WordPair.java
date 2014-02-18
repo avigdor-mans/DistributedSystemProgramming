@@ -47,15 +47,15 @@ public class WordPair implements WritableComparable<WordPair>
 	@Override
 	public void readFields(DataInput in) throws IOException
 	{
-		word1 = new Text(in.readLine());
-		word2 = new Text(in.readLine());
+		word1.readFields(in);
+		word2.readFields(in);
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException
 	{
-		out.writeChars(word1.toString());
-		out.writeChars(word2.toString());
+		word1.write(out);
+		word2.write(out);
 	}
 
 	@Override

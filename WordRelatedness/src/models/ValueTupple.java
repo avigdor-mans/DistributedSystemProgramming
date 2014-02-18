@@ -48,8 +48,8 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 		countWord2.readFields(in);
 		wordPair.readFields(in);
 		countWordPair.readFields(in);
-		year = new IntWritable(in.readInt());
-		n = new LongWritable(in.readLong());
+		year.readFields(in);
+		n.readFields(in);
 	}
 
 	@Override
