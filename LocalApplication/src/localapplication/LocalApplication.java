@@ -44,7 +44,7 @@ public class LocalApplication
 			if(!isManagerRunning(services))
 			{
 				System.out.println("Inizializing new manager");
-				Instance manager = initializeManager(services);
+				initializeManager(services);  // Instance manager
 			}
 	        
 	        // send a message to Manager 					   

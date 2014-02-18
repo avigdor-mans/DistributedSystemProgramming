@@ -3,8 +3,6 @@ package worker;
 import java.io.File;
 import java.util.List;
 
-
-
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.ec2.AmazonEC2;
@@ -35,7 +33,7 @@ public class AmazonServices
 	  
 	  public AmazonServices()
 	  {
-		  this.credentials = new BasicAWSCredentials("credentials"); 
+		  this.credentials = new BasicAWSCredentials("AKIAJZFCY5FIFMSAAGRQ","JHAB/lX5xrjOu+Vj6b294f0hpxF7oqJt8UGAItbo"); 
 		  
 		  // connect to the S3 service
 		  this.s3 = new AmazonS3Client(credentials);
