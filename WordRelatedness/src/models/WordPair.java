@@ -74,4 +74,10 @@ public class WordPair implements WritableComparable<WordPair>
 			return this.word2.compareTo(o.word2);
 	}
 
+	@Override
+	public String toString()
+	{
+		return word1 + "\t" + word2;
+	}
+
 }

@@ -6,7 +6,6 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
 public class ValueTupple implements WritableComparable<ValueTupple>
@@ -56,10 +55,14 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 	@Override
 	public void write(DataOutput out) throws IOException
 	{
-		//		word1
+		word1.write(out);
+		countWord1.write(out);
+		word2.write(out);
+		countWord2.write(out);
 		wordPair.write(out);
-		year.write(out);
 		countWordPair.write(out);
+		year.write(out);
+		n.write(out);
 	}
 
 	@Override
@@ -71,6 +74,19 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 	public WordPair getWordPair()
 	{
 		return wordPair;
+	}
+
+	@Override
+	public String toString()
+	{
+		return 	word1 + "\t" +
+				countWord1 + "\t" +
+				word2 + "\t" +
+				countWord2 + "\t" +
+				wordPair + "\t" + 
+				countWordPair + "\t" + 
+				year + "\t" + 
+				n;
 	}
 
 	public LongWritable getCountWord1() {
