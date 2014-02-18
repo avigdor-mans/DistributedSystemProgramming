@@ -17,6 +17,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.io.LongWritable;
 
@@ -30,6 +31,8 @@ public class Step1
 		@Override
 		public void map(LongWritable key, Text value, Context context) throws IOException,  InterruptedException
 		{
+			System.out.println("in map1");
+			
 			StringTokenizer itr = new StringTokenizer(value.toString());
 			
 			if (itr.countTokens() != 9)
@@ -47,6 +50,8 @@ public class Step1
 			}
 			
 			String middleWord = words.remove(2);
+			
+			System.out.println("middle word is: " + middleWord);
 						
 			String yearAsString = itr.nextToken();
 			year = new IntWritable(Integer.parseInt(yearAsString));
@@ -58,6 +63,8 @@ public class Step1
 			{
 				if(!StopWords.contains(word))
 				{
+					System.out.println("Adding keys for pair: (" + middleWord +"," + word + ")");
+					
 					WordPair emptyPair = new WordPair();
 					WordPair wordPair = new WordPair(middleWord,word);
 					WordPair word1 = new WordPair(middleWord,"*");
@@ -127,7 +134,8 @@ public class Step1
 	}
 
 	public static void main(String[] args) throws Exception
-	{	
+	{
+		System.out.println("Start Step 1");
 		Configuration conf = new Configuration();
 		//conf.set("mapred.map.tasks","10");
 		conf.set("mapred.reduce.tasks","11");
@@ -137,7 +145,7 @@ public class Step1
 		job.setPartitionerClass(PartitionerClass.class);
 		job.setCombinerClass(ReduceClass.class);
 		job.setReducerClass(ReduceClass.class);
-//		job.setInputFormatClass(SequenceFileInputFormat.class);
+		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputKeyClass(WordPair.class);
 		job.setOutputValueClass(ValueTupple.class);
 		FileInputFormat.addInputPath(job, new Path(args[0]));
