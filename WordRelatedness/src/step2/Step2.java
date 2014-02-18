@@ -42,17 +42,21 @@ public class Step2
 			IntWritable year = new IntWritable(value.getYear());
 
 			//create word1 and word2 from oldWordPair
-//			Text wordFromKey = key.getWord2();
-			WordPair word1 = null;
-			WordPair word2 = null;
 			/*oldWord2 might change to word1*/
+			
+			
+//			reminder to dror for tomorrow
+//			Text wordFromKey = key.getWord2();
+//			Text word1 = oldWordPair.getWord1();
+//			Text word2 = oldWordPair.getWord2();
 
 			//init newValue + set N
 			ValueTupple newValue = new ValueTupple(word1, word2, oldWordPair, oldNumOfOccurs, year);
 			newValue.setN(oldN);
 
 			//set oldCountWord2
-			if (oldWord2.compareTo(word2) == 0){
+			if (oldWord2.getWord2().compareTo(word2) == 0)
+			{
 				newValue.setCountWord2(oldCountWord2);
 			}
 			else
