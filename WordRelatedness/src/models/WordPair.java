@@ -83,7 +83,7 @@ public class WordPair implements WritableComparable<WordPair>
 	@Override
 	public String toString()
 	{
-		return word1 + "\t" + word2;
+		return "Word1: " + word1 + "\t" + "Word2: " + word2;
 	}
 
 }

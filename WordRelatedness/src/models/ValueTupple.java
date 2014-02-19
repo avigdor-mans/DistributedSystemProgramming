@@ -10,9 +10,9 @@ import org.apache.hadoop.io.WritableComparable;
 
 public class ValueTupple implements WritableComparable<ValueTupple>
 {
-	private WordPair word1;
+	private WordPair starWord1;
 	private LongWritable countWord1;
-	private WordPair word2;
+	private WordPair starWord2;
 	private LongWritable countWord2;
 	private WordPair wordPair;
 	private LongWritable countWordPair;
@@ -27,9 +27,9 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 	public ValueTupple (WordPair word1, WordPair word2,	WordPair wordPair,
 			LongWritable countWordPair, IntWritable year)
 	{
-		this.word1 = word1;
+		this.starWord1 = word1;
 		this.countWord1 = new LongWritable(0);
-		this.word2 = word2;
+		this.starWord2 = word2;
 		this.countWord2 = new LongWritable(0);
 		this.wordPair = wordPair;
 		this.countWordPair = countWordPair;
@@ -39,9 +39,9 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 	
 	private void clear()
 	{
-		this.word1 = new WordPair();
+		this.starWord1 = new WordPair();
 		this.countWord1 = new LongWritable();
-		this.word2 = new WordPair();
+		this.starWord2 = new WordPair();
 		this.countWord2 = new LongWritable();
 		this.wordPair = new WordPair();
 		this.countWordPair = new LongWritable();
@@ -54,9 +54,9 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 	public void readFields(DataInput in) throws IOException
 	{
 		clear();
-		word1.readFields(in);
+		starWord1.readFields(in);
 		countWord1.readFields(in);
-		word2.readFields(in);
+		starWord2.readFields(in);
 		countWord2.readFields(in);
 		wordPair.readFields(in);
 		countWordPair.readFields(in);
@@ -67,9 +67,9 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 	@Override
 	public void write(DataOutput out) throws IOException
 	{
-		word1.write(out);
+		starWord1.write(out);
 		countWord1.write(out);
-		word2.write(out);
+		starWord2.write(out);
 		countWord2.write(out);
 		wordPair.write(out);
 		countWordPair.write(out);
@@ -91,14 +91,14 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 	@Override
 	public String toString()
 	{
-		return 	word1 + "\t" +
-				countWord1 + "\t" +
-				word2 + "\t" +
-				countWord2 + "\t" +
-				wordPair + "\t" + 
-				countWordPair + "\t" + 
+		return 	"StarWord1: " + starWord1 + "\t" +
+				"CountWord1: " + countWord1 + "\t" +
+				"StarWord2: " + starWord2 + "\t" +
+				"CountWord2: " + countWord2 + "\t" +
+				"WordPair: " + wordPair + "\t" + 
+				"CountWordPair: " + countWordPair + "\t" + 
 				year + "\t" + 
-				n;
+				n + "\n";
 	}
 
 	public LongWritable getCountWord1() {
@@ -146,12 +146,12 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 		return n;
 	}
 
-	public WordPair getWord1() {
-		return word1;
+	public WordPair getStarWord1() {
+		return starWord1;
 	}
 
-	public WordPair getWord2() {
-		return word2;
+	public WordPair getStarWord2() {
+		return starWord2;
 	}
 
 	public int getYear()

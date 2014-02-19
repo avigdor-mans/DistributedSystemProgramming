@@ -34,37 +34,29 @@ public class Step2
 		public void map(WordPair key, ValueTupple value, Context context) throws IOException,  InterruptedException
 		{
 			//get information from old value
-			WordPair oldWord2 = value.getWord2();
+			WordPair starWord1 = value.getStarWord1();
+			WordPair starWord2 = value.getStarWord2();
+
 			WordPair oldWordPair = value.getWordPair();
-			LongWritable oldCountWord2 = new LongWritable(value.getCountWord2().get());
 			LongWritable oldNumOfOccurs = new LongWritable(value.getCountWordPair());
+
 			LongWritable oldN = new LongWritable(value.getN().get());
 			IntWritable year = new IntWritable(value.getYear());
 
-			//create word1 and word2 from oldWordPair
-			/*oldWord2 might change to word1*/
-			
-			
-//			reminder to dror for tomorrow
-//			Text wordFromKey = key.getWord2();
-//			Text word1 = oldWordPair.getWord1();
-//			Text word2 = oldWordPair.getWord2();
-
-			WordPair word1 = new WordPair();
-			WordPair word2 = new WordPair();
-			
 			//init newValue + set N
-			ValueTupple newValue = new ValueTupple(word1, word2, oldWordPair, oldNumOfOccurs, year);
+			ValueTupple newValue = new ValueTupple(starWord1, starWord2, oldWordPair, oldNumOfOccurs, year);
 			newValue.setN(oldN);
 
-			//set oldCountWord2
-			if (oldWord2.compareTo(word2) == 0)
+			// set oldCountWord
+			if (starWord1.compareTo(key) == 0)
 			{
-				newValue.setCountWord2(oldCountWord2);
+				LongWritable oldCountStarWord1 = new LongWritable(value.getCountWord1().get());
+				newValue.setCountWord1(oldCountStarWord1);
 			}
 			else
 			{
-				newValue.setCountWord1(oldCountWord2);
+				LongWritable oldCountStarWord2 = new LongWritable(value.getCountWord2().get());
+				newValue.setCountWord2(oldCountStarWord2);
 			}
 			context.write(oldWordPair , newValue);
 		}
@@ -76,58 +68,70 @@ public class Step2
 		public void reduce(WordPair key, Iterable<ValueTupple> values, Context context) throws IOException,  InterruptedException
 		{
 			long sum = 0;
-			long newCountWord1 = 0;
-			long newCountWord2 = 0;
+			long newCountStarWord1 = 0;
+			long newCountStarWord2 = 0;
+
+			ValueTupple oldValue = null;
+			boolean gotOldValue = false;
+
+			for (ValueTupple value : values)
+			{
+				if(!gotOldValue)
+				{
+					oldValue = value;
+					gotOldValue = true;
+				}
+
+				//sums all CountWordPair in values
+				long occurNum = value.getCountWordPair();
+				sum+=occurNum;
+
+				//update newCountWord1
+				long oldCountW1 = value.getCountWord1().get();
+				if (oldCountW1 != 0){
+					newCountStarWord1 = oldCountW1;
+				}	
+
+				//update newCountWord2
+				else{	
+					long oldCountW2 = value.getCountWord2().get();
+					if (oldCountW2 != 0){
+						newCountStarWord2 = oldCountW2;
+					}
+				}
+			}
+
+			//CountWordPair's were summed twice for each pair
+			sum= sum/2;
+			//create LongWritable instances for countWordPair
+			LongWritable newNumOfOccurs = new LongWritable(sum);
 
 			//get information from oldValue
-			ValueTupple oldValue = values.iterator().next();
-			WordPair oldWord1 = oldValue.getWord1();
-			WordPair oldWord2 = oldValue.getWord2();
+			WordPair oldWord1 = oldValue.getStarWord1();
+			WordPair oldWord2 = oldValue.getStarWord2();
 			WordPair oldWordPair = oldValue.getWordPair();
 			LongWritable oldN = new LongWritable(oldValue.getN().get());
 			IntWritable year = new IntWritable(oldValue.getYear());
 
-			for (ValueTupple value : values)
-			{
-				//sums all CountWordPair in values
-				long occurNum = value.getCountWordPair();
-				sum+=occurNum;
-				//update newCountWord1
-				long oldCountW1 = value.getCountWord1().get();
-				if (oldCountW1 != 0){
-					newCountWord1 = oldCountW1;
-					//update newCountWord2
-					long oldCountW2 = value.getCountWord2().get();
-					if (oldCountW2 != 0){
-						newCountWord2 = oldCountW2;
-					}
-				}
+			//init newValue
+			ValueTupple newValue = new ValueTupple(oldWord1, oldWord2, oldWordPair, newNumOfOccurs, year);
 
-				//CountWordPair's were summed twice for each pair
-				sum= sum/2;
-				//create LongWritable instances for countWordPair
-				LongWritable oldNumOfOccurs = new LongWritable(sum);
+			//create LongWritable instances for countWord1 countWord2
+			LongWritable countWord1 = new LongWritable(newCountStarWord1);
+			LongWritable countWord2 = new LongWritable(newCountStarWord2);
 
-				//init newValue
-				ValueTupple newValue = new ValueTupple(oldWord1, oldWord2, oldWordPair, oldNumOfOccurs, year);
+			//set newValue
+			newValue.setN(oldN); 
+			newValue.setCountWord1(countWord1);
+			newValue.setCountWord2(countWord2);
 
-				//create LongWritable instances for countWord1 countWord2
-				LongWritable countWord1 = new LongWritable(newCountWord1);
-				LongWritable countWord2 = new LongWritable(newCountWord2);
-
-				//set newValue
-				newValue.setN(oldN); 
-				newValue.setCountWord1(countWord1);
-				newValue.setCountWord2(countWord2);
-
-				context.write(oldWordPair , newValue);
-			}
+			context.write(oldWordPair , newValue);
 		}
 	}
 
 	public static class PartitionerClass extends Partitioner<WordPair, ValueTupple>
 	{
-		final int DECADE = 11;
+		final int DECADE = 12;
 		@Override
 		public int getPartition(WordPair key, ValueTupple value, int numPartitions)
 		{
@@ -140,17 +144,18 @@ public class Step2
 	public static void main(String[] args) throws Exception
 	{	
 		Configuration conf = new Configuration();
-		//conf.set("mapred.map.tasks","10");
-		conf.set("mapred.reduce.tasks","11");
+//		conf.set("mapred.map.tasks","10");
+//		conf.set("mapred.reduce.tasks","11");
 		Job job = new Job(conf, "step2");
 		job.setJarByClass(Step2.class);
 		job.setMapperClass(MapClass.class);
 		job.setPartitionerClass(PartitionerClass.class);
 		job.setCombinerClass(ReduceClass.class);
 		job.setReducerClass(ReduceClass.class);
-		job.setInputFormatClass(SequenceFileInputFormat.class);
+//		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
+		job.setNumReduceTasks(12);
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 		System.exit(job.waitForCompletion(true) ? 0 : 1);

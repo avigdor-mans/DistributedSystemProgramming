@@ -46,7 +46,8 @@ public class AmazonServices
 		  HadoopJarStepConfig hadoopJarStep = new HadoopJarStepConfig()
 		      .withJar("s3n://akiajzfcy5fifmsaagrq/step1.jar") // This should be a full map reduce application.
 		      .withMainClass("step1.Step1")
-		      .withArgs("s3n://dsp112/eng.corp.10k", "s3n://akiajzfcy5fifmsaagrq/Step1/output");
+		      .withArgs("s3n://akiajzfcy5fifmsaagrq/input/input.txt", "s3n://akiajzfcy5fifmsaagrq/Step1/output");
+		  //s3n://dsp112/eng.corp.10k
 		  
 //		  hadoopJarSteps.add(new HadoopJarStepConfig()
 //	      .withJar("s3n://akiajzfcy5fifmsaagrq/Step2.jar") // This should be a full map reduce application.
