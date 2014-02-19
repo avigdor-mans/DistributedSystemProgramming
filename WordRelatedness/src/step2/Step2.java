@@ -50,12 +50,15 @@ public class Step2
 //			Text word1 = oldWordPair.getWord1();
 //			Text word2 = oldWordPair.getWord2();
 
+			WordPair word1 = new WordPair();
+			WordPair word2 = new WordPair();
+			
 			//init newValue + set N
 			ValueTupple newValue = new ValueTupple(word1, word2, oldWordPair, oldNumOfOccurs, year);
 			newValue.setN(oldN);
 
 			//set oldCountWord2
-			if (oldWord2.getWord2().compareTo(word2) == 0)
+			if (oldWord2.compareTo(word2) == 0)
 			{
 				newValue.setCountWord2(oldCountWord2);
 			}

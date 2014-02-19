@@ -21,14 +21,12 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 
 	public ValueTupple()
 	{
-		super();
-		System.out.println("empty tupple");
+		clear();
 	}
-
+	
 	public ValueTupple (WordPair word1, WordPair word2,	WordPair wordPair,
 			LongWritable countWordPair, IntWritable year)
 	{
-		super();
 		this.word1 = word1;
 		this.countWord1 = new LongWritable(0);
 		this.word2 = word2;
@@ -38,10 +36,24 @@ public class ValueTupple implements WritableComparable<ValueTupple>
 		this.year = year;
 		this.n = new LongWritable(0);
 	}
+	
+	private void clear()
+	{
+		this.word1 = new WordPair();
+		this.countWord1 = new LongWritable();
+		this.word2 = new WordPair();
+		this.countWord2 = new LongWritable();
+		this.wordPair = new WordPair();
+		this.countWordPair = new LongWritable();
+		this.year = new IntWritable();
+		this.n = new LongWritable();
+	}
+
 
 	@Override
 	public void readFields(DataInput in) throws IOException
 	{
+		clear();
 		word1.readFields(in);
 		countWord1.readFields(in);
 		word2.readFields(in);

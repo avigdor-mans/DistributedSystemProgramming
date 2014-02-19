@@ -102,11 +102,19 @@ public class Step1
 			
 			//handle key(*,z)
 			else {
-				for (ValueTupple value : values){
+				ValueTupple oldValue = null;
+				boolean gotOldValue = false;
+				for (ValueTupple value : values)
+				{
+					if(!gotOldValue)
+					{
+						oldValue = value;
+						gotOldValue = true;
+					}
 					long occurNum = value.getCountWordPair();
 					sum+=occurNum;
 				}
-				ValueTupple oldValue = values.iterator().next();
+				
 				WordPair word1 = oldValue.getWord1();
 				WordPair word2 = oldValue.getWord2();
 				WordPair wordPair = oldValue.getWordPair();

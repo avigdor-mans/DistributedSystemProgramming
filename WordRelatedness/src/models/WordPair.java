@@ -14,7 +14,6 @@ public class WordPair implements WritableComparable<WordPair>
 	
 	public WordPair()
 	{
-		super();
 		this.word1 = new Text("*");
 		this.word2 = new Text("*");
 	}
@@ -34,6 +33,12 @@ public class WordPair implements WritableComparable<WordPair>
 		}
 	}
 	
+	private void clear()
+	{
+		this.word1 = new Text();
+		this.word2 = new Text();
+	}
+	
 	public Text getWord1()
 	{
 		return word1;
@@ -47,6 +52,7 @@ public class WordPair implements WritableComparable<WordPair>
 	@Override
 	public void readFields(DataInput in) throws IOException
 	{
+		clear();
 		word1.readFields(in);
 		word2.readFields(in);
 	}

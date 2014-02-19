@@ -1,8 +1,11 @@
 package assignment2;
 
+import java.io.IOException;
 import java.util.ArrayList;
+
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
@@ -29,7 +32,14 @@ public class AmazonServices
 	  {
 		  this.stepsConfig = new ArrayList<>();
 		  
-		  this.credentials = new BasicAWSCredentials("AKIAJZFCY5FIFMSAAGRQ","JHAB/lX5xrjOu+Vj6b294f0hpxF7oqJt8UGAItbo");
+		  try 
+		  {
+			  this.credentials = new PropertiesCredentials(AmazonServices.class.getResourceAsStream("../AwsCredentials.properties"));
+		  }
+		  catch (IOException e) 
+		  {
+			  e.printStackTrace();
+		  } 
 		  
 		  mapReduce = new AmazonElasticMapReduceClient(credentials);
 		   
