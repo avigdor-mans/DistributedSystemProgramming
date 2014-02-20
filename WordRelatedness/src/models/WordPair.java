@@ -14,8 +14,7 @@ public class WordPair implements WritableComparable<WordPair>
 	
 	public WordPair()
 	{
-		this.word1 = new Text("*");
-		this.word2 = new Text("*");
+		clear();
 	}
 
 	public WordPair(String word1,String word2)
@@ -83,7 +82,7 @@ public class WordPair implements WritableComparable<WordPair>
 	@Override
 	public String toString()
 	{
-		return "Word1: " + word1 + "\t" + "Word2: " + word2;
+		return "(" + word1 + "," + word2 + ")";
 	}
 
 }

@@ -7,6 +7,7 @@ import java.util.StringTokenizer;
 import models.StopWords;
 import models.ValueTupple;
 import models.WordPair;
+import models.WordPairData;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -25,9 +26,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class Step2
 {
 
-	public static class MapClass extends Mapper<WordPair,ValueTupple, WordPair, ValueTupple>
+	public static class MapClass extends Mapper<WordPair,WordPairData, WordPair, WordPairData>
 	{
-		//private IntWritable year;
 		//private LongWritable numOfOccurences;
 
 		@Override
