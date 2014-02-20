@@ -20,9 +20,9 @@ public class AmazonServices
 {
 	  public AWSCredentials credentials;
 	  AmazonElasticMapReduce mapReduce;
-	  ArrayList<HadoopJarStepConfig> hadoopJarSteps;
-	  ArrayList<StepConfig> stepsConfig;
 	  JobFlowInstancesConfig instances;
+	  ArrayList<StepConfig> steps;
+	  StepConfig stepConfig;
 
 	  public String bucketName;
 	  
@@ -30,7 +30,7 @@ public class AmazonServices
 	  	  
 	  public AmazonServices()
 	  {
-		  this.stepsConfig = new ArrayList<>();
+		  this.steps = new ArrayList<>();
 		  
 		  try 
 		  {
@@ -47,31 +47,35 @@ public class AmazonServices
 		      .withJar("s3n://akiajzfcy5fifmsaagrq/step1.jar") // This should be a full map reduce application.
 		      .withMainClass("step1.Step1")
 		      .withArgs("s3n://akiajzfcy5fifmsaagrq/input/input.txt", "s3n://akiajzfcy5fifmsaagrq/Step1/output");
+		  
+		  stepConfig = new StepConfig()
+	      .withName("step1")
+	      .withHadoopJarStep(hadoopJarStep)
+	      .withActionOnFailure("TERMINATE_JOB_FLOW");
 		  //s3n://dsp112/eng.corp.10k
 		  
-//		  hadoopJarSteps.add(new HadoopJarStepConfig()
-//	      .withJar("s3n://akiajzfcy5fifmsaagrq/Step2.jar") // This should be a full map reduce application.
-//	      .withMainClass("some.pack.MainClass")
-//	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step1/", "s3n://akiajzfcy5fifmsaagrq/Step2/"));
+		  steps.add(stepConfig);
+				  
+//		  hadoopJarStep =  new HadoopJarStepConfig()
+//	      .withJar("s3n://akiajzfcy5fifmsaagrq/step2.jar") // This should be a full map reduce application.
+//	      .withMainClass("step2.Step2")
+//	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step1/output/", "s3n://akiajzfcy5fifmsaagrq/Step2/output");
 //		  
+//		  stepConfig = new StepConfig()
+//	      .withName("step2")
+//	      .withHadoopJarStep(hadoopJarStep)
+//	      .withActionOnFailure("TERMINATE_JOB_FLOW");
+		  
+//		  steps.add(stepConfig);
+		  
 //		  hadoopJarSteps.add(new HadoopJarStepConfig()
 //	      .withJar("s3n://akiajzfcy5fifmsaagrq/Step3.jar") // This should be a full map reduce application.
 //	      .withMainClass("some.pack.MainClass")
 //	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step2/", args[1] , args[2]));
-		   
-		  StepConfig stepConfig = new StepConfig()
-		      .withName("step1")
-		      .withHadoopJarStep(hadoopJarStep)
-		      .withActionOnFailure("TERMINATE_JOB_FLOW");
 		  
 //		  stepsConfig.add(new StepConfig()
 //	      .withName("step2")
-//	      .withHadoopJarStep(hadoopJarSteps)
-//	      .withActionOnFailure("TERMINATE_JOB_FLOW"));
-//		  
-//		  stepsConfig.add(new StepConfig()
-//	      .withName("step2")
-//	      .withHadoopJarStep(hadoopJarSteps)
+//	      .withHadoopJarStep(hadoopJarStep)
 //	      .withActionOnFailure("TERMINATE_JOB_FLOW"));
 		  
 		  instances = new JobFlowInstancesConfig()

@@ -6,14 +6,15 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
 public class WordPairData implements WritableComparable<WordPairData>
 {
+//	private WordPair wordPair;
 	private LongWritable countWordPair;
 	private LongWritable countWord1;
 	private LongWritable countWord2;
-	private IntWritable year;
 	private LongWritable n;
 	
 	public WordPairData()
@@ -21,13 +22,20 @@ public class WordPairData implements WritableComparable<WordPairData>
 		clear();
 	}
 	
-	public WordPairData (WordPair wordPair, LongWritable countWordPair, IntWritable year)
+	public WordPairData (long countWordPair)
 	{
-		this.countWordPair = countWordPair;
+		this.countWordPair = new LongWritable(countWordPair);
 		this.countWord1 = new LongWritable(0);
 		this.countWord2 = new LongWritable(0);
-		this.year = year;
 		this.n = new LongWritable(0);
+	}
+	
+	public WordPairData (long countWordPair, long n)
+	{
+		this.countWordPair = new LongWritable(countWordPair);
+		this.countWord1 = new LongWritable(0);
+		this.countWord2 = new LongWritable(0);
+		this.n = new LongWritable(n);
 	}
 	
 	private void clear()
@@ -35,10 +43,8 @@ public class WordPairData implements WritableComparable<WordPairData>
 		this.countWordPair = new LongWritable();
 		this.countWord1 = new LongWritable();
 		this.countWord2 = new LongWritable();
-		this.year = new IntWritable();
 		this.n = new LongWritable();
 	}
-
 
 	@Override
 	public void readFields(DataInput in) throws IOException
@@ -47,7 +53,6 @@ public class WordPairData implements WritableComparable<WordPairData>
 		countWordPair.readFields(in);
 		countWord1.readFields(in);
 		countWord2.readFields(in);
-		year.readFields(in);
 		n.readFields(in);
 	}
 
@@ -57,7 +62,6 @@ public class WordPairData implements WritableComparable<WordPairData>
 		countWordPair.write(out);
 		countWord1.write(out);
 		countWord2.write(out);
-		year.write(out);
 		n.write(out);
 	}
 
@@ -70,11 +74,10 @@ public class WordPairData implements WritableComparable<WordPairData>
 	@Override
 	public String toString()
 	{
-		return 	"CountWordPair: " + countWordPair + "\t" +
-				"CountWord1: " + countWord1 + "\t" +
-				"CountWord2: " + countWord2 + "\t" +
-				year + "\t" + 
-				n + "\n";
+		return 	countWordPair + "\t" +		// 2
+				countWord1 + "\t" +			// 3
+				countWord2 + "\t" +			// 4
+				n ;							// 5
 	}
 	
 	public long getCountWordPair()
@@ -92,14 +95,9 @@ public class WordPairData implements WritableComparable<WordPairData>
 		return countWord2.get();
 	}
 	
-	public int getYear()
+	public long getN()
 	{
-		return year.get();
-	}
-	
-	public LongWritable getN()
-	{
-		return n;
+		return n.get();
 	}
 
 	public void setCountWordPair(long countWordPair)
@@ -117,8 +115,8 @@ public class WordPairData implements WritableComparable<WordPairData>
 		this.countWord2 = new LongWritable(countWord2);
 	}
 
-	public void setN(long n)
+	public void setN(LongWritable n)
 	{
-		this.n = new LongWritable(n);
+		this.n = n;
 	}
 }

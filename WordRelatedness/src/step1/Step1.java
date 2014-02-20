@@ -76,13 +76,12 @@ public class Step1
 				if(!StopWords.isStopWord(word))
 				{
 					//Adding keys for pair: (middleWord,word)
-
-					WordPair emptyPair = new WordPair("*","*");
-					WordPairData emptyWordPairData = new WordPairData(emptyPair,numOfOccurences, year);
+					WordPair emptyPair = new WordPair("*","*",year.get());
+					WordPairData emptyWordPairData = new WordPairData(numOfOccurences.get());
 					context.write(emptyPair , emptyWordPairData);
-					
-					WordPair wordPair = new WordPair(middleWord,word);
-					WordPairData wordPairData = new WordPairData(wordPair, numOfOccurences, year);
+
+					WordPair wordPair = new WordPair(middleWord,word,year.get());
+					WordPairData wordPairData = new WordPairData(numOfOccurences.get());
 					context.write(wordPair , wordPairData);
 				}
 			}			
@@ -91,38 +90,28 @@ public class Step1
 
 	public static class ReduceClass extends Reducer<WordPair,WordPairData,WordPair,WordPairData>
 	{
-		static long n;
-		static long sum;
-		
+		LongWritable n;
+
 		@Override
 		public void reduce(WordPair key, Iterable<WordPairData> values, Context context) throws IOException,  InterruptedException
 		{
-			IntWritable year = null;
-			boolean gotDecade = false;
-			sum = 0;
-			
-			for (WordPairData value : values)
-			{
-				if(!gotDecade)
-				{
-					year = new IntWritable(value.getYear());
-					gotDecade = true;
-				}
-				// in case of (*,*) sums 1's , else sums the numOfOccurences
-				sum += value.getCountWordPair();
-			}
-			
 			if(key.getWord1().toString().equals("*") && key.getWord2().toString().equals("*"))
 			{
-				n = sum;
-				return;
-			}
+				long sum = 0;
+				for (WordPairData value : values)
+				{
+					sum += value.getCountWordPair();
+				}
+				n = new LongWritable(sum);
+			}			
 			else
 			{
-				LongWritable totalSum = new LongWritable(sum);
-				WordPairData newWordPairData = new WordPairData(key,totalSum, year);
-				
-				newWordPairData.setN(n);
+				long sum = 0;
+				for (WordPairData value : values)
+				{
+					sum += value.getCountWordPair();
+				}
+				WordPairData newWordPairData = new WordPairData(sum,n.get());				
 				context.write(key, newWordPairData);
 			}
 		}
@@ -134,8 +123,8 @@ public class Step1
 		@Override
 		public int getPartition(WordPair key, WordPairData value, int numPartitions)
 		{
-			int year = value.getYear();
-			int decade = year / 10; 
+			int year = key.getYear();
+			int decade = year / 10;
 			return decade % DECADE;
 		}
 	}
