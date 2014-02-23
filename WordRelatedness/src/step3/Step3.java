@@ -2,93 +2,107 @@ package step3;
 
 import java.io.IOException;
 
-import models.ProbabilityValue;
-import models.ValueTupple;
 import models.WordPair;
+import models.WordPairData;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.Reducer.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+//import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class Step3
 {
 	
-	public static class MapClass extends Mapper<WordPair,ValueTupple, Text, ProbabilityValue>
+	public static class MapClass extends Mapper<LongWritable,Text, WordPair, WordPairData>
 	{
+		//private LongWritable numOfOccurences;
+		
 		@Override
-		public void map(WordPair key, ValueTupple value, Context context) throws IOException,  InterruptedException
+		public void map(LongWritable key, Text value, Context context) throws IOException,  InterruptedException
 		{
-			  //get information from old value
-			  WordPair oldWordPair = value.getWordPair();
-			  double oldCountWord1 = value.getCountWord1().get();			  
-			  double oldCountWord2 = value.getCountWord2().get();
-			  double oldCountWordPair = value.getCountWordPair();
-			  double oldN = value.getN().get();
-			  IntWritable oldYear = new IntWritable(value.getYear());
-			  
-			  //handle joint probability
-			  double jointVal = oldCountWordPair / oldN;
-			  DoubleWritable newJointVal = new DoubleWritable(jointVal);
-			  Text joint = new Text("joint");
-			  
-			  //handle dice probability
-			  double diceVal = (2*oldCountWordPair) / (oldCountWord1+oldCountWord1);
-			  DoubleWritable newDiceVal = new DoubleWritable(diceVal);			  
-			  Text dice = new Text("dice");
-			  
-			  //handle geometric probability
-			  double geometricVal = Math.sqrt(jointVal*diceVal);
-			  DoubleWritable newGeometricVal = new DoubleWritable(geometricVal);			  
-			  Text geometric = new Text("geometric");			  
-			  
-			  //init newValues
-			  ProbabilityValue newJointProbValue = new ProbabilityValue(oldWordPair, newJointVal, oldYear);
-			  ProbabilityValue newDiceProbValue = new ProbabilityValue(oldWordPair, newDiceVal, oldYear);
-			  ProbabilityValue newGeometricProbValue = new ProbabilityValue(oldWordPair, newGeometricVal, oldYear);
-			  
-			  //add probValues to context
-			  context.write(joint , newJointProbValue);
-			  context.write(dice , newDiceProbValue);
-			  context.write(geometric , newGeometricProbValue);
-		}
-	}
-
-	public static class ReduceClass extends Reducer<Text,ProbabilityValue,Text,ProbabilityValue>
-	{	
-		@Override
-		public void reduce(Text key, Iterable<ProbabilityValue> values, Context context) throws IOException,  InterruptedException
-		{
+			//get information from old value
+			String[] strings = value.toString().split("\t");
+			int year = Integer.parseInt(strings[1]);
+			String word1 = strings[0].split(",")[0];
+			String word2 = strings[0].split(",")[1];
 			
+			if(word1.equals("*") || word2.equals("*"))
+			{
+				return;
+			}
+			
+			WordPair wordPair = new WordPair(word1,word2,year);
+			wordPair.reversePair();
+			WordPair word1Star = new WordPair(word1,"*",year);
+			WordPair word2Star = new WordPair(word2,"*",year);
+			
+			long numOfOccurences = Long.parseLong(strings[2]);
+			long n = Long.parseLong(strings[5]);
+			
+			//init newValue + set N
+			WordPairData wordPairData = new WordPairData(numOfOccurences,n);
+			wordPairData.setCountWord1(Long.parseLong(strings[3]));
+			
+			context.write(word1Star , wordPairData);
+			context.write(word2Star , wordPairData);
+			context.write(wordPair , wordPairData);			
 		}
 	}
 
-	public static class PartitionerClass extends Partitioner<Text, ProbabilityValue>
+	public static class ReduceClass extends Reducer<WordPair,WordPairData,WordPair,WordPairData>
+	{	
+		LongWritable countWord = new LongWritable(-1);
+		
+		@Override
+		public void reduce(WordPair key, Iterable<WordPairData> values, Context context) throws IOException,  InterruptedException
+		{
+			long sum = 0;
+			
+			if(key.getWord2().toString().equals("*"))
+			{
+				for (WordPairData value : values)
+				{
+					//sums all CountWordPair in values
+					sum += value.getCountWordPair();
+				}
+				countWord = new LongWritable(sum);
+				context.write(key, new WordPairData(sum));
+			}
+			else
+			{
+				for(WordPairData value : values)
+				{
+					WordPairData wordPairData = new WordPairData(value.getCountWordPair(),value.getN());
+					wordPairData.setCountWord1(value.getCountWord1());
+					wordPairData.setCountWord2(countWord.get());
+					WordPair wordPair = new WordPair(key.getWord1().toString(),key.getWord2().toString(),key.getYear());
+					context.write(wordPair, wordPairData);
+				}
+			}
+		}
+	}
+
+	public static class PartitionerClass extends Partitioner<WordPair, WordPairData>
 	{
 		final int DECADE = 12;
 		@Override
-		public int getPartition(Text key, ProbabilityValue value, int numPartitions)
+		public int getPartition(WordPair key, WordPairData value, int numPartitions)
 		{
-			int year = value.getProbYear();
-			int decade = year / 10;
-			
+			int year = key.getYear();
+			int decade = year / 10; 
 			return decade % DECADE;
 		}
 	}
 
 	public static void main(String[] args) throws Exception
 	{	
-		int kFromArgs = Integer.parseInt(args[2]);
 		Configuration conf = new Configuration();
 //		conf.set("mapred.map.tasks","10");
 //		conf.set("mapred.reduce.tasks","11");
@@ -98,31 +112,13 @@ public class Step3
 		job.setPartitionerClass(PartitionerClass.class);
 		job.setCombinerClass(ReduceClass.class);
 		job.setReducerClass(ReduceClass.class);
-		job.setInputFormatClass(SequenceFileInputFormat.class);
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(IntWritable.class);
-		job.setNumReduceTasks(36);
+//		job.setInputFormatClass(SequenceFileInputFormat.class);
+		job.setOutputKeyClass(WordPair.class);
+		job.setOutputValueClass(WordPairData.class);
+		job.setNumReduceTasks(12);
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
 
 }
-
-
-//int probabilityType = -1;
-//String keyName = key.toString();
-//switch (keyName)
-//{
-//case "joint":
-//	probabilityType = 0;
-//	break;
-//case "dice":
-//	probabilityType = 12;
-//	break;
-//case "geometric":
-//	probabilityType = 24;
-//	break;
-//default:
-//	break;
-//}

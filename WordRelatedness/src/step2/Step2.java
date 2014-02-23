@@ -30,10 +30,17 @@ public class Step2
 			//get information from old value
 			String[] strings = value.toString().split("\t");
 			int year = Integer.parseInt(strings[1]);
-			WordPair wordPair = new WordPair(strings[0].split(",")[0],strings[0].split(",")[1],year);
+			String word1 = strings[0].split(",")[0];
+			String word2 = strings[0].split(",")[1];
 			
-			WordPair word1Star = new WordPair(strings[0].split(",")[0],"*",year);
-			WordPair word2Star = new WordPair(strings[0].split(",")[1],"*",year);
+			if(word1.equals("*") || word2.equals("*"))
+			{
+				return;
+			}
+			
+			WordPair wordPair = new WordPair(word1,word2,year);
+			WordPair word1Star = new WordPair(word1,"*",year);
+			WordPair word2Star = new WordPair(word2,"*",year);
 			
 			long numOfOccurences = Long.parseLong(strings[2]);
 			long n = Long.parseLong(strings[5]);
@@ -49,7 +56,7 @@ public class Step2
 
 	public static class ReduceClass extends Reducer<WordPair,WordPairData,WordPair,WordPairData>
 	{	
-		LongWritable countWord;
+		LongWritable countWord = new LongWritable(-1);
 		
 		@Override
 		public void reduce(WordPair key, Iterable<WordPairData> values, Context context) throws IOException,  InterruptedException
@@ -58,20 +65,21 @@ public class Step2
 			
 			if(key.getWord2().toString().equals("*"))
 			{
-				countWord = new LongWritable(sum);
 				for (WordPairData value : values)
 				{
 					//sums all CountWordPair in values
 					sum += value.getCountWordPair();
 				}
 				countWord = new LongWritable(sum);
+				context.write(key, new WordPairData(sum));
 			}
 			else
 			{
 				for(WordPairData value : values)
 				{
-					value.setCountWord1(countWord.get());
-					context.write(key, value);
+					WordPairData wordPairData = new WordPairData(value.getCountWordPair(),value.getN());
+					wordPairData.setCountWord1(countWord.get());
+					context.write(key, wordPairData);
 				}
 			}
 		}

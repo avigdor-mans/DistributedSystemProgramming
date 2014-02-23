@@ -96,4 +96,11 @@ public class WordPair implements WritableComparable<WordPair>
 				year;								// 1
 	}
 
+	public void reversePair()
+	{
+		Text temp = word1;
+		word1 = word2;
+		word2 = temp;
+	}
+	
 }

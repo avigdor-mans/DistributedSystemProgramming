@@ -90,7 +90,7 @@ public class Step1
 
 	public static class ReduceClass extends Reducer<WordPair,WordPairData,WordPair,WordPairData>
 	{
-		LongWritable n;
+		LongWritable n = new LongWritable(-1);
 
 		@Override
 		public void reduce(WordPair key, Iterable<WordPairData> values, Context context) throws IOException,  InterruptedException
@@ -103,6 +103,7 @@ public class Step1
 					sum += value.getCountWordPair();
 				}
 				n = new LongWritable(sum);
+				context.write(key, new WordPairData(sum,n.get()));
 			}			
 			else
 			{
