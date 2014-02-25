@@ -44,9 +44,9 @@ public class Step1
 
 			for(int i = 0 ; i < numOfWords ; i++)
 			{
-				String word = itr.nextToken().replace("\"","").trim();
+				String word = itr.nextToken().replace("\"","").trim().toLowerCase();
 				System.out.println(word);
-				if(!word.isEmpty() && !StopWords.isStopWord(word.toLowerCase()))
+				if(!word.isEmpty() && !StopWords.isStopWord(word))
 				{
 					words.add(word);
 					System.out.println("words size: " + words.size());

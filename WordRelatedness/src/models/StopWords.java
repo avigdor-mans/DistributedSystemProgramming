@@ -35,6 +35,6 @@ public class StopWords
 	
 	public static boolean isStopWord(String word)
 	{
-		return contains(word) || !Character.isLetter(word.charAt(0));
+		return contains(word) || !Character.isLetter(word.charAt(0)) || word.length() < 2;
 	}
 }
