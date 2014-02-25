@@ -10,7 +10,7 @@ import org.apache.hadoop.io.WritableComparable;
 
 public class ProbabilityData implements WritableComparable<ProbabilityData>
 {
-	private Text ProbTybe;
+	private Text probType;
 	private DoubleWritable probValue;
 
 	public ProbabilityData()
@@ -20,13 +20,13 @@ public class ProbabilityData implements WritableComparable<ProbabilityData>
 	
 	public ProbabilityData (String type, double value)
 	{
-		this.ProbTybe = new Text(type);
+		this.probType = new Text(type);
 		this.probValue = new DoubleWritable(value);
 	}
 	
 	private void clear()
 	{
-		this.ProbTybe = new Text();
+		this.probType = new Text();
 		this.probValue = new DoubleWritable();
 	}
 	
@@ -34,21 +34,21 @@ public class ProbabilityData implements WritableComparable<ProbabilityData>
 	public void readFields(DataInput in) throws IOException
 	{
 		clear();
-		ProbTybe.readFields(in);
+		probType.readFields(in);
 		probValue.readFields(in);
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException
 	{
-		ProbTybe.write(out);
+		probType.write(out);
 		probValue.write(out);
 	}
 
 	@Override
 	public int compareTo(ProbabilityData o)
 	{
-		int result = this.ProbTybe.compareTo(o.ProbTybe);
+		int result = this.probType.compareTo(o.probType);
 		if (result == 0)
 		{
 			result = -1 * this.probValue.compareTo(o.probValue); 
@@ -59,12 +59,12 @@ public class ProbabilityData implements WritableComparable<ProbabilityData>
 	@Override
 	public String toString()
 	{
-		return 	ProbTybe + "\t" + probValue;
+		return 	probType + "\t" + probValue;
 	}
 	
 	public String getProbType()
 	{
-		return ProbTybe.toString();
+		return probType.toString();
 	}
 	
 	public double getProbValue() 

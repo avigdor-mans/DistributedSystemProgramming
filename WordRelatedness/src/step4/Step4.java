@@ -1,6 +1,7 @@
 package step4;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import models.ProbabilityData;
 import models.WordPair;
@@ -60,30 +61,94 @@ public class Step4
 	}
 
 	public static class ReduceClass extends Reducer<ProbabilityData,WordPair,ProbabilityData,WordPair>
-	{	
+	{
+		private Integer diceK;
+		private Integer geometricK;
+		private Integer jointK;
+		
+		@Override
+		protected void setup(Context context) throws IOException, InterruptedException
+		{
+//			super.setup(context);
+			diceK = new Integer(context.getConfiguration().get("threshold","-1"));
+			geometricK = new Integer(context.getConfiguration().get("threshold","-1"));
+			jointK = new Integer(context.getConfiguration().get("threshold","-1"));
+		}
+
 		@Override
 		public void reduce(ProbabilityData key, Iterable<WordPair> values, Context context) throws IOException,  InterruptedException
 		{
 			System.out.println("in reducer");
-			double k = Integer.parseInt(context.getConfiguration().get("threshold","-1"));
+			int k;
+			int i;
+			Iterator<WordPair> it = values.iterator();
 			
-			for(WordPair value : values)
+			if(key.getProbType().toString().equals("dice"))
 			{
-				if(k > 0)
+				k = diceK;
+				for(i = 0 ; i < k ; i++)
 				{
-					k-- ;
-					String word1 = value.getWord1().toString();
-					String word2 = value.getWord2().toString();
-					int year = value.getYear();
-					WordPair wordPair = new WordPair(word1, word2, year);
-					context.write(key, wordPair);
+					if(it.hasNext())
+					{
+						WordPair value = it.next();
+						String word1 = value.getWord1().toString();
+						String word2 = value.getWord2().toString();
+						int year = value.getYear();
+						WordPair wordPair = new WordPair(word1, word2, year);
+						context.write(key, wordPair);
+					}
+					else
+					{
+						break;
+					}
 				}
-				else
-				{
-					break;
-				}
+				k = diceK - i;
+				diceK = new Integer(k);
 			}
-//			context.write(key, new ProbabilityData("$","$",0,k));
+			else if(key.getProbType().toString().equals("geometric"))
+			{
+				k = geometricK;
+				for(i = 0 ; i < k ; i++)
+				{
+					if(it.hasNext())
+					{
+						WordPair value = it.next();
+						String word1 = value.getWord1().toString();
+						String word2 = value.getWord2().toString();
+						int year = value.getYear();
+						WordPair wordPair = new WordPair(word1, word2, year);
+						context.write(key, wordPair);
+					}
+					else
+					{
+						break;
+					}
+				}
+				k = geometricK - i;
+				geometricK = new Integer(k);
+			}
+			else
+			{
+				k = jointK;
+				for(i = 0 ; i < k ; i++)
+				{
+					if(it.hasNext())
+					{
+						WordPair value = it.next();
+						String word1 = value.getWord1().toString();
+						String word2 = value.getWord2().toString();
+						int year = value.getYear();
+						WordPair wordPair = new WordPair(word1, word2, year);
+						context.write(key, wordPair);
+					}
+					else
+					{
+						break;
+					}
+				}
+				k = jointK - i;
+				jointK = new Integer(k);
+			}
 		}
 	}
 
@@ -120,5 +185,4 @@ public class Step4
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
-
 }

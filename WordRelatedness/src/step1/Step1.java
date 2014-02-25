@@ -40,14 +40,15 @@ public class Step1
 			
 			System.out.println("num of words is: " + numOfWords);
 			
-			ArrayList<String> words = new ArrayList<>();
+			ArrayList<String> words = new ArrayList<String>();
 
 			for(int i = 0 ; i < numOfWords ; i++)
 			{
-				String word = itr.nextToken().replace("\"", "").replace("'", "");
-				if(!word.isEmpty() && !StopWords.isStopWord(word))
+				String word = itr.nextToken().replace("\"","").replace("'", "").trim();
+				System.out.println(word);
+				if(!word.isEmpty() && !StopWords.isStopWord(word.toLowerCase()))
 				{
-					words.add(word.toLowerCase());
+					words.add(word);
 					System.out.println("words size: " + words.size());
 				}
 			}
