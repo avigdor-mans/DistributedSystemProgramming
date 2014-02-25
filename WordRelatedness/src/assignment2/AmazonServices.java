@@ -28,7 +28,7 @@ public class AmazonServices
 	  
 	  String jobFlowId;
 	  	  
-	  public AmazonServices()
+	  public AmazonServices(String k)
 	  {
 		  this.steps = new ArrayList<StepConfig>();
 		  
@@ -82,7 +82,7 @@ public class AmazonServices
 		  hadoopJarStep = new HadoopJarStepConfig()
 	      .withJar("s3n://akiajzfcy5fifmsaagrq/step4.jar") // This should be a full map reduce application.
 	      .withMainClass("step4.Step4")
-	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step3/output/", "s3n://akiajzfcy5fifmsaagrq/Step4/output", "20");
+	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step3/output/", "s3n://akiajzfcy5fifmsaagrq/Step4/output", k);
 		  
 		  stepConfig = new StepConfig()
 	      .withName("step4")
@@ -111,7 +111,7 @@ public class AmazonServices
 		  
 	  public static void main(String [] args)
 	  {
-		  AmazonServices services = new AmazonServices();
+		  AmazonServices services = new AmazonServices(args[0]);
 		  System.out.println("Ran job flow with id: " + services.jobFlowId);
 	  }
 }

@@ -44,7 +44,7 @@ public class Step1
 
 			for(int i = 0 ; i < numOfWords ; i++)
 			{
-				String word = itr.nextToken().replace("\"","").replace("'", "").trim();
+				String word = itr.nextToken().replace("\"","").trim();
 				System.out.println(word);
 				if(!word.isEmpty() && !StopWords.isStopWord(word.toLowerCase()))
 				{
