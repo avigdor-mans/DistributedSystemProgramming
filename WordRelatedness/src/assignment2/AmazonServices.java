@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
@@ -44,47 +43,47 @@ public class AmazonServices
 		  
 		  mapReduce = new AmazonElasticMapReduceClient(credentials);
 		   
-//		  HadoopJarStepConfig hadoopJarStep = new HadoopJarStepConfig()
-//		      .withJar("s3n://akiajzfcy5fifmsaagrq/step1.jar") // This should be a full map reduce application.
-//		      .withMainClass("step1.Step1")
-//		      .withArgs("s3n://akiajzfcy5fifmsaagrq/input/input.txt", "s3n://akiajzfcy5fifmsaagrq/Step1/output");
-//		  
-//		  stepConfig = new StepConfig()
-//	      .withName("step1")
-//	      .withHadoopJarStep(hadoopJarStep)
-//	      .withActionOnFailure("TERMINATE_JOB_FLOW");
-//		  //s3n://dsp112/eng.corp.10k
-//		  
-//		  steps.add(stepConfig);
-//				  
-//		  hadoopJarStep =  new HadoopJarStepConfig()
-//	      .withJar("s3n://akiajzfcy5fifmsaagrq/step2.jar") // This should be a full map reduce application.
-//	      .withMainClass("step2.Step2")
-//	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step1/output/", "s3n://akiajzfcy5fifmsaagrq/Step2/output");
-//		  
-//		  stepConfig = new StepConfig()
-//	      .withName("step2")
-//	      .withHadoopJarStep(hadoopJarStep)
-//	      .withActionOnFailure("TERMINATE_JOB_FLOW");
-//		  
-//		  steps.add(stepConfig);
-//		  
-//		  hadoopJarStep = new HadoopJarStepConfig()
-//	      .withJar("s3n://akiajzfcy5fifmsaagrq/step3.jar") // This should be a full map reduce application.
-//	      .withMainClass("step3.Step3")
-//	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step2/output/", "s3n://akiajzfcy5fifmsaagrq/Step3/output");
-//		  
-//		  stepConfig = new StepConfig()
-//	      .withName("step3")
-//	      .withHadoopJarStep(hadoopJarStep)
-//	      .withActionOnFailure("TERMINATE_JOB_FLOW");
-//		  
-//		  steps.add(stepConfig);
+		  HadoopJarStepConfig hadoopJarStep = new HadoopJarStepConfig()
+		      .withJar("s3n://akiajzfcy5fifmsaagrq/step1.jar") // This should be a full map reduce application.
+		      .withMainClass("step1.Step1")
+		      .withArgs("s3n://dsp112/eng.corp.10k", "s3n://akiajzfcy5fifmsaagrq/Step1/output");
+//		  s3n://akiajzfcy5fifmsaagrq/input/input.txt
+		  
+		  stepConfig = new StepConfig()
+	      .withName("step1")
+	      .withHadoopJarStep(hadoopJarStep)
+	      .withActionOnFailure("TERMINATE_JOB_FLOW");
+		  
+		  steps.add(stepConfig);
+				  
+		  hadoopJarStep =  new HadoopJarStepConfig()
+	      .withJar("s3n://akiajzfcy5fifmsaagrq/step2.jar") // This should be a full map reduce application.
+	      .withMainClass("step2.Step2")
+	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step1/output/", "s3n://akiajzfcy5fifmsaagrq/Step2/output");
+		  
+		  stepConfig = new StepConfig()
+	      .withName("step2")
+	      .withHadoopJarStep(hadoopJarStep)
+	      .withActionOnFailure("TERMINATE_JOB_FLOW");
+		  
+		  steps.add(stepConfig);
+		  
+		  hadoopJarStep = new HadoopJarStepConfig()
+	      .withJar("s3n://akiajzfcy5fifmsaagrq/step3.jar") // This should be a full map reduce application.
+	      .withMainClass("step3.Step3")
+	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step2/output/", "s3n://akiajzfcy5fifmsaagrq/Step3/output");
+		  
+		  stepConfig = new StepConfig()
+	      .withName("step3")
+	      .withHadoopJarStep(hadoopJarStep)
+	      .withActionOnFailure("TERMINATE_JOB_FLOW");
+		  
+		  steps.add(stepConfig);
 		  
 		  hadoopJarStep = new HadoopJarStepConfig()
 	      .withJar("s3n://akiajzfcy5fifmsaagrq/step4.jar") // This should be a full map reduce application.
 	      .withMainClass("step4.Step4")
-	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step3/output/", "s3n://akiajzfcy5fifmsaagrq/Step4/output", "10");
+	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step3/output/", "s3n://akiajzfcy5fifmsaagrq/Step4/output", "20");
 		  
 		  stepConfig = new StepConfig()
 	      .withName("step4")
@@ -95,9 +94,9 @@ public class AmazonServices
 		  
 		  instances = new JobFlowInstancesConfig()
 		      .withInstanceCount(2)
-		      .withMasterInstanceType(InstanceType.M1Small.toString())
-		      .withSlaveInstanceType(InstanceType.M1Small.toString())
-		      .withHadoopVersion("2.2.0").withEc2KeyName("manager")
+		      .withMasterInstanceType(InstanceType.M1Medium.toString())
+		      .withSlaveInstanceType(InstanceType.M1Medium.toString())
+		      .withHadoopVersion("2.2.0")//.withEc2KeyName("manager")
 		      .withKeepJobFlowAliveWhenNoSteps(false)
 		      .withPlacement(new PlacementType("us-east-1a"));
 		   

@@ -17,7 +17,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-//import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.io.LongWritable;
 
@@ -36,22 +36,29 @@ public class Step1
 			//check enough tokens were recieved
 			int numOfTokens = itr.countTokens();
 
-			if (numOfTokens < 6)
-			{
-				System.out.println("Amount of tokens is to small");
-				return;
-			}
-
 			int numOfWords = numOfTokens - 4;
+			
+			System.out.println("num of words is: " + numOfWords);
+			
 			ArrayList<String> words = new ArrayList<>();
 
 			for(int i = 0 ; i < numOfWords ; i++)
 			{
-				String word = itr.nextToken().replace("\"", "");
-				if(!word.isEmpty())
+				String word = itr.nextToken().replace("\"", "").replace("'", "");
+				if(!word.isEmpty() && !StopWords.isStopWord(word))
 				{
 					words.add(word.toLowerCase());
+					System.out.println("words size: " + words.size());
 				}
+			}
+			
+			if(words.size()  < 2)
+			{
+				return;
+			}
+			else
+			{
+				numOfWords = words.size();
 			}
 
 			//midWordIndex in case of- 5word:2, 4word:2, 3word:1, 2word:1
@@ -73,17 +80,14 @@ public class Step1
 
 			for(String word : words)
 			{
-				if(!StopWords.isStopWord(word))
-				{
-					//Adding keys for pair: (middleWord,word)
-					WordPair emptyPair = new WordPair("*","*",year.get());
-					WordPairData emptyWordPairData = new WordPairData(numOfOccurences.get());
-					context.write(emptyPair , emptyWordPairData);
+				//Adding keys for pair: (middleWord,word)
+				WordPair emptyPair = new WordPair("*","*",year.get());
+				WordPairData emptyWordPairData = new WordPairData(numOfOccurences.get());
+				context.write(emptyPair , emptyWordPairData);
 
-					WordPair wordPair = new WordPair(middleWord,word,year.get());
-					WordPairData wordPairData = new WordPairData(numOfOccurences.get());
-					context.write(wordPair , wordPairData);
-				}
+				WordPair wordPair = new WordPair(middleWord,word,year.get());
+				WordPairData wordPairData = new WordPairData(numOfOccurences.get());
+				context.write(wordPair , wordPairData);
 			}			
 		}
 	}
@@ -140,7 +144,9 @@ public class Step1
 		job.setPartitionerClass(PartitionerClass.class);
 		job.setCombinerClass(ReduceClass.class);
 		job.setReducerClass(ReduceClass.class);
-		//		job.setInputFormatClass(SequenceFileInputFormat.class);
+		
+		job.setInputFormatClass(SequenceFileInputFormat.class);
+		
 		job.setOutputKeyClass(WordPair.class);
 		job.setOutputValueClass(WordPairData.class);
 		job.setNumReduceTasks(12);

@@ -18,8 +18,8 @@ public class StopWords
 		"too","under","until","up","very","was","wasn't","we","we'd","we'll","we're","we've",
 		"were","weren't","what","what's","when","when's","where","where's","which","while","who",
 		"who's","whom","why","why's","with","won't","would","wouldn't","you","you'd","you'll",
-		"you're","you've","your","yours","yourself","yourselves" };
-//		"\"","'","^","?",";",":","1",".","-","*","#","$","&","%","!",")","("};
+		"you're","you've","your","yours","yourself","yourselves",
+		"\"","'","^","?",";",":","1",".","-","*","#","$","&","%","!",")","("};
 
 	private static boolean contains(String word)
 	{
@@ -35,6 +35,6 @@ public class StopWords
 	
 	public static boolean isStopWord(String word)
 	{
-		return !(Character.isLetter(word.charAt(0)) || contains(word));
+		return contains(word) || !Character.isLetter(word.charAt(0));
 	}
 }

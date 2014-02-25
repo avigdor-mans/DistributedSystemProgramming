@@ -14,7 +14,6 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-//import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class Step3
@@ -40,19 +39,28 @@ public class Step3
 			
 			WordPair wordPair = new WordPair(word1,word2,year);
 			wordPair.reversePair();
-			WordPair word1Star = new WordPair(word1,"*",year);
-			WordPair word2Star = new WordPair(word2,"*",year);
-			
 			long numOfOccurences = Long.parseLong(strings[2]);
 			long n = Long.parseLong(strings[5]);
 			
-			//init newValue + set N
+			// init newValue
 			WordPairData wordPairData = new WordPairData(numOfOccurences,n);
 			wordPairData.setCountWord1(Long.parseLong(strings[3]));
 			
-			context.write(word1Star , wordPairData);
-			context.write(word2Star , wordPairData);
-			context.write(wordPair , wordPairData);			
+			if(word1.equals(word2))
+			{
+				WordPair word1Star = new WordPair(word1,"*",year);
+				context.write(word1Star , wordPairData);
+				context.write(wordPair , wordPairData);
+			}
+			else
+			{
+				WordPair word1Star = new WordPair(word1,"*",year);
+				WordPair word2Star = new WordPair(word2,"*",year);
+				
+				context.write(word1Star , wordPairData);
+				context.write(word2Star , wordPairData);
+				context.write(wordPair , wordPairData);			
+			}
 		}
 	}
 
@@ -104,15 +112,12 @@ public class Step3
 	public static void main(String[] args) throws Exception
 	{	
 		Configuration conf = new Configuration();
-//		conf.set("mapred.map.tasks","10");
-//		conf.set("mapred.reduce.tasks","11");
 		Job job = new Job(conf, "step3");
 		job.setJarByClass(Step3.class);
 		job.setMapperClass(MapClass.class);
 		job.setPartitionerClass(PartitionerClass.class);
 		job.setCombinerClass(ReduceClass.class);
 		job.setReducerClass(ReduceClass.class);
-//		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputKeyClass(WordPair.class);
 		job.setOutputValueClass(WordPairData.class);
 		job.setNumReduceTasks(12);

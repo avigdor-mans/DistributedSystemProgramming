@@ -3,6 +3,7 @@ package step4;
 import java.io.IOException;
 
 import models.ProbabilityData;
+import models.WordPair;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -13,14 +14,11 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-//import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class Step4
 {
-	static Integer kFromArgs = new Integer(-1);
-
-	public static class MapClass extends Mapper<LongWritable,Text, Text, ProbabilityData>
+	public static class MapClass extends Mapper<LongWritable,Text, ProbabilityData, WordPair>
 	{
 		@Override
 		public void map(LongWritable key, Text value, Context context) throws IOException,  InterruptedException
@@ -41,58 +39,61 @@ public class Step4
 			double countW2 = Double.parseDouble(strings[4]);
 			double n = Double.parseDouble(strings[5]);
 
+			WordPair wordPair = new WordPair(word1, word2, year);
+			
 			//handle joint probability
 			double jointVal = countW1W2 / n;
-			ProbabilityData jointProbData = new ProbabilityData(word1, word2, year, jointVal);
-			Text joint = new Text("joint");
-			context.write(joint , jointProbData);
+			ProbabilityData jointProbData = new ProbabilityData("joint",jointVal);
+			
+			context.write(jointProbData , wordPair);
 
 			//handle dice probability
 			double diceVal = (2 * countW1W2) / (countW1 + countW2);
-			ProbabilityData diceProbData = new ProbabilityData(word1, word2, year, diceVal);
-			Text dice = new Text("dice");
-			context.write(dice , diceProbData);
+			ProbabilityData diceProbData = new ProbabilityData("dice", diceVal);
+			context.write(diceProbData , wordPair);
 
 			//handle geometric probability
 			double geometricVal = Math.sqrt(jointVal * diceVal);
-			ProbabilityData geometricProbData = new ProbabilityData(word1, word2, year, geometricVal);
-			Text geometric = new Text("geometric");
-			context.write(geometric , geometricProbData);
-			
+			ProbabilityData geometricProbData = new ProbabilityData("geometric", geometricVal);
+			context.write(geometricProbData , wordPair);
 		}
 	}
 
-	public static class ReduceClass extends Reducer<Text,ProbabilityData,Text,ProbabilityData>
+	public static class ReduceClass extends Reducer<ProbabilityData,WordPair,ProbabilityData,WordPair>
 	{	
 		@Override
-		public void reduce(Text key, Iterable<ProbabilityData> values, Context context) throws IOException,  InterruptedException
+		public void reduce(ProbabilityData key, Iterable<WordPair> values, Context context) throws IOException,  InterruptedException
 		{
-			int k = Step4.kFromArgs.intValue();
-
-			for(ProbabilityData value : values)
+			System.out.println("in reducer");
+			double k = Integer.parseInt(context.getConfiguration().get("threshold","-1"));
+			
+			for(WordPair value : values)
 			{
-				//				if(k > 0)
-				//				{
-				//					k-- ;
-				String word1 = value.getProbWordPair().getWord1().toString();
-				String word2 = value.getProbWordPair().getWord2().toString();
-				double probValue = value.getProbValue();
-				ProbabilityData probabilityData = new ProbabilityData(word1, word2, value.getProbYear(), probValue);
-				context.write(key, probabilityData);
-				//				}
-				//				Text error = new Text("Error - Message");
+				if(k > 0)
+				{
+					k-- ;
+					String word1 = value.getWord1().toString();
+					String word2 = value.getWord2().toString();
+					int year = value.getYear();
+					WordPair wordPair = new WordPair(word1, word2, year);
+					context.write(key, wordPair);
+				}
+				else
+				{
+					break;
+				}
 			}
-			context.write(key, new ProbabilityData("$","$",Step4.kFromArgs,k));
+//			context.write(key, new ProbabilityData("$","$",0,k));
 		}
 	}
 
-	public static class PartitionerClass extends Partitioner<Text, ProbabilityData>
+	public static class PartitionerClass extends Partitioner<ProbabilityData, WordPair>
 	{
 		final int DECADE = 12;
 		@Override
-		public int getPartition(Text key, ProbabilityData value, int numPartitions)
+		public int getPartition(ProbabilityData key, WordPair value, int numPartitions)
 		{
-			int year = value.getProbYear();
+			int year = value.getYear();
 			int decade = year / 10;
 
 			return decade % DECADE;
@@ -102,20 +103,18 @@ public class Step4
 	public static void main(String[] args) throws Exception
 	{	
 		System.out.println("Start Step 4");
-		Step4.kFromArgs = new Integer(args[2]);
-
-		System.out.println("k recieved: " + kFromArgs);
 
 		Configuration conf = new Configuration();
+		conf.set("threshold", args[2]);
+		
 		Job job = new Job(conf, "step4");
 		job.setJarByClass(Step4.class);
 		job.setMapperClass(MapClass.class);
 		job.setPartitionerClass(PartitionerClass.class);
 		job.setCombinerClass(ReduceClass.class);
 		job.setReducerClass(ReduceClass.class);
-		//		job.setInputFormatClass(SequenceFileInputFormat.class);
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(ProbabilityData.class);
+		job.setOutputKeyClass(ProbabilityData.class);
+		job.setOutputValueClass(WordPair.class);
 		job.setNumReduceTasks(12);
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
