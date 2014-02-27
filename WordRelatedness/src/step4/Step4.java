@@ -78,7 +78,6 @@ public class Step4
 		@Override
 		public void reduce(ProbabilityData key, Iterable<WordPair> values, Context context) throws IOException,  InterruptedException
 		{
-			System.out.println("in reducer");
 			int k;
 			int i;
 			Iterator<WordPair> it = values.iterator();

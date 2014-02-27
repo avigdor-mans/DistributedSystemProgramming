@@ -38,18 +38,14 @@ public class Step1
 
 			int numOfWords = numOfTokens - 4;
 			
-			System.out.println("num of words is: " + numOfWords);
-			
 			ArrayList<String> words = new ArrayList<String>();
 
 			for(int i = 0 ; i < numOfWords ; i++)
 			{
 				String word = itr.nextToken().replace("\"","").trim().toLowerCase();
-				System.out.println(word);
 				if(!word.isEmpty() && !StopWords.isStopWord(word))
 				{
 					words.add(word);
-					System.out.println("words size: " + words.size());
 				}
 			}
 			

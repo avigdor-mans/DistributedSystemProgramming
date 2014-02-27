@@ -44,9 +44,10 @@ public class AmazonServices
 		  mapReduce = new AmazonElasticMapReduceClient(credentials);
 		   
 		  hadoopJarStep = new HadoopJarStepConfig()
-		      .withJar("s3n://akiajzfcy5fifmsaagrq/step1.jar") // This should be a full map reduce application.
+		      .withJar("s3n://akiajzfcy5fifmsaagr/step1.jar") // This should be a full map reduce application.
 		      .withMainClass("step1.Step1")
-		      .withArgs("s3n://dsp112/eng.corp.10k", "s3n://akiajzfcy5fifmsaagrq/Step1/output");
+		      .withArgs("s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-gb-all/5gram/data", "s3n://akiajzfcy5fifmsaagr/Step1/output");
+		  //	s3n://dsp112/eng.corp.10k
 		  
 		  stepConfig = new StepConfig()
 	      .withName("step1")
@@ -56,9 +57,9 @@ public class AmazonServices
 		  steps.add(stepConfig);
 				  
 		  hadoopJarStep =  new HadoopJarStepConfig()
-	      .withJar("s3n://akiajzfcy5fifmsaagrq/step2.jar") // This should be a full map reduce application.
+	      .withJar("s3n://akiajzfcy5fifmsaagr/step2.jar") // This should be a full map reduce application.
 	      .withMainClass("step2.Step2")
-	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step1/output/", "s3n://akiajzfcy5fifmsaagrq/Step2/output");
+	      .withArgs("s3n://akiajzfcy5fifmsaagr/Step1/output/", "s3n://akiajzfcy5fifmsaagr/Step2/output");
 		  
 		  stepConfig = new StepConfig()
 	      .withName("step2")
@@ -68,9 +69,9 @@ public class AmazonServices
 		  steps.add(stepConfig);
 		  
 		  hadoopJarStep = new HadoopJarStepConfig()
-	      .withJar("s3n://akiajzfcy5fifmsaagrq/step3.jar") // This should be a full map reduce application.
+	      .withJar("s3n://akiajzfcy5fifmsaagr/step3.jar") // This should be a full map reduce application.
 	      .withMainClass("step3.Step3")
-	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step2/output/", "s3n://akiajzfcy5fifmsaagrq/Step3/output");
+	      .withArgs("s3n://akiajzfcy5fifmsaagr/Step2/output/", "s3n://akiajzfcy5fifmsaagr/Step3/output");
 		  
 		  stepConfig = new StepConfig()
 	      .withName("step3")
@@ -80,9 +81,9 @@ public class AmazonServices
 		  steps.add(stepConfig);
 		  
 		  hadoopJarStep = new HadoopJarStepConfig()
-	      .withJar("s3n://akiajzfcy5fifmsaagrq/step4.jar") // This should be a full map reduce application.
+	      .withJar("s3n://akiajzfcy5fifmsaagr/step4.jar") // This should be a full map reduce application.
 	      .withMainClass("step4.Step4")
-	      .withArgs("s3n://akiajzfcy5fifmsaagrq/Step3/output/", "s3n://akiajzfcy5fifmsaagrq/Step4/output", k);
+	      .withArgs("s3n://akiajzfcy5fifmsaagr/Step3/output/", "s3n://akiajzfcy5fifmsaagr/Step4/output", k);
 		  
 		  stepConfig = new StepConfig()
 	      .withName("step4")
@@ -92,7 +93,7 @@ public class AmazonServices
 		  steps.add(stepConfig);
 		  
 		  instances = new JobFlowInstancesConfig()
-		      .withInstanceCount(2)
+		      .withInstanceCount(19)
 		      .withMasterInstanceType(InstanceType.M1Medium.toString())
 		      .withSlaveInstanceType(InstanceType.M1Large.toString())
 		      .withHadoopVersion("2.2.0")//.withEc2KeyName("manager")
@@ -103,7 +104,7 @@ public class AmazonServices
 		      .withName("Assignmet2")
 		      .withInstances(instances)
 		      .withSteps(steps)
-		      .withLogUri("s3n://akiajzfcy5fifmsaagrq/logs/");//.withAmiVersion("1.0.0");
+		      .withLogUri("s3n://akiajzfcy5fifmsaagr/logs/");//.withAmiVersion("1.0.0");
 		   
 		  RunJobFlowResult runJobFlowResult = mapReduce.runJobFlow(runFlowRequest);
 		  this.jobFlowId = runJobFlowResult.getJobFlowId();

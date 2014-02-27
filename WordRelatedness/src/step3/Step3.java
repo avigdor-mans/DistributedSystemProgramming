@@ -48,8 +48,9 @@ public class Step3
 			
 			if(word1.equals(word2))
 			{
-				WordPair word1Star = new WordPair(word1,"*",year);
-				context.write(word1Star , wordPairData);
+				WordPair word2Star = new WordPair(word2,"*",year);
+				context.write(word2Star , wordPairData);
+				wordPairData.setCountWord2(Long.parseLong(strings[3]));
 				context.write(wordPair , wordPairData);
 			}
 			else
@@ -89,7 +90,17 @@ public class Step3
 				{
 					WordPairData wordPairData = new WordPairData(value.getCountWordPair(),value.getN());
 					wordPairData.setCountWord1(value.getCountWord1());
-					wordPairData.setCountWord2(countWord.get());
+					
+					if(key.getWord1().compareTo(key.getWord2()) == 0)
+					{
+						
+						wordPairData.setCountWord2(value.getCountWord2());
+					}
+					else
+					{
+						wordPairData.setCountWord2(countWord.get());						
+					}
+					// reverse key back to how it was before
 					WordPair wordPair = new WordPair(key.getWord1().toString(),key.getWord2().toString(),key.getYear());
 					context.write(wordPair, wordPairData);
 				}
